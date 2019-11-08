@@ -45,11 +45,11 @@ class mabplt:
         m = len(Y)
         
         if (names is not None):
-            names = np.pad(np.array(names[:m]), (0, m-len(names)), 'wrap') 
+            names = np.pad(np.array(names[:m]), (0, max(0, m-len(names))), 'wrap') 
         if (linestyles is not None):
-            linestyles = np.pad(np.array(linestyles[:m]), (0, m-len(linestyles)), 'wrap') 
+            linestyles = np.pad(np.array(linestyles[:m]), (0, max(0, m-len(linestyles))), 'wrap') 
         if (linecolors is not None):
-            linecolors = np.pad(np.array(linecolors[:m]), (0, m-len(linecolors)), 'wrap') 
+            linecolors = np.pad(np.array(linecolors[:m]), (0, max(0, m-len(linecolors))), 'wrap') 
         
         if Y.ndim > 1:
 
