@@ -14,7 +14,7 @@ from collections import Iterable
 import matplotlib.pyplot as plt
 #import matplotlib.mlab as mlab
 import datetime
-%matplotlib inline
+#%matplotlib inline
 #%matplotlib notebook
 #import pickle
 #from google.colab import files
