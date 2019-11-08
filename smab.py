@@ -193,6 +193,9 @@ class EpsilonGreedyPolicy(EmpiricalMeansPolicy):
 
 class UCBPolicy(EmpiricalMeansPolicy):
 
+    def __init__(self, k, v_ini=None, force_first_trial=True):
+        super().__init__(k, v_ini=v_ini, force_first_trial=force_first_trial)
+
     def _evaluate(self):
         r""" Compute the current index, at time t and after :math:`N_k(t)` pulls of arm k:
         .. math:: I_k(t) = \frac{X_k(t)}{N_k(t)} + \sqrt{\frac{2 \log(t)}{N_k(t)}}.
@@ -211,6 +214,9 @@ class UCBPolicy(EmpiricalMeansPolicy):
 ################################################################################
 
 class BernKLUCBPolicy(EmpiricalMeansPolicy):
+
+    def __init__(self, k, v_ini=None, force_first_trial=True):
+        super().__init__(k, v_ini=v_ini, force_first_trial=force_first_trial)
 
     @jit
     def _klBern(self, x, y):
@@ -307,6 +313,9 @@ class ThompsonPolicy(EmpiricalMeansPolicy):
     - Reference: [Thompson - Biometrika, 1933].
     """
 
+    def __init__(self, k, v_ini=None, force_first_trial=True):
+        super().__init__(k, v_ini=v_ini, force_first_trial=force_first_trial)
+
     def _evaluate(self):
         r""" Compute the current index, at time t and after :math:`N_k(t)` pulls of arm k, giving :math:`S_k(t)` rewards of 1, by sampling from the Beta posterior:
         .. math::
@@ -326,6 +335,10 @@ class BayesUCBPolicy(EmpiricalMeansPolicy):
     - By default, it uses a Beta posterior (:class:`Policies.Posterior.Beta`), one by arm.
     -Reference: [Kaufmann, Cappé & Garivier - AISTATS, 2012].
     """
+    
+    def __init__(self, k, v_ini=None, force_first_trial=True):
+        super().__init__(k, v_ini=v_ini, force_first_trial=force_first_trial)
+
     def _evaluate(self):
         r""" Compute the current index, at time t and after :math:`N_k(t)` pulls of arm k, giving :math:`S_k(t)` rewards of 1, by taking the :math:`1 - \frac{1}{t}` quantile from the Beta posterior:
         .. math:: I_k(t) = \mathrm{Quantile}\left(\mathrm{Beta}(1 + S_k(t), 1 + N_k(t) - S_k(t)), 1 - \frac{1}{t}\right).
@@ -339,7 +352,7 @@ class BayesUCBPolicy(EmpiricalMeansPolicy):
 ################################################################################
 
 # class for the marab algorithm
-class MaRaBPolicy(UCBPolicy):
+class MaRaBPolicy(EmpiricalMeansPolicy):
     
     def __init__(self, k, v_ini=None, force_first_trial=True, alpha=0.05, C=1e-6):
         super().__init__(k, v_ini=v_ini, force_first_trial=force_first_trial)
@@ -389,8 +402,9 @@ class Budgeted:
 
 class BanditGamblerPolicy(EmpiricalMeansPolicy, Budgeted):
 
-    def __init__(self, k, d=None, b_0=None):
-        EmpiricalMeansPolicy.__init__(self, k)
+    def __init__(self, k, v_ini=None, force_first_trial=True, d=None, b_0=None):
+        #super().__init__(k, v_ini=v_ini, force_first_trial=force_first_trial, d=d, b_0=b_0)
+        EmpiricalMeansPolicy.__init__(self, k, v_ini=v_ini, force_first_trial=force_first_trial)
         Budgeted.__init__(self, k, d=d, b_0=b_0)
 
     #@jit
@@ -402,16 +416,14 @@ class BanditGamblerPolicy(EmpiricalMeansPolicy, Budgeted):
         return beta.cdf(0.5, x_i+1, y_i+1) + integral(lambda p, x, y, b : ((1-p)/p)**b * beta.pdf(p, x+1, y+1), 0.5, 1.0, (x_i, y_i, b))[0]
 
     def reset(self):
-        super().reset()
-        #IndexPolicy.startGame(self)
-        #Budgeted.startGame(self)
-        #BernoulliEstimator.startGame(self)
+        #super().reset()
+        EmpiricalMeansPolicy.reset(self)
+        Budgeted.reset(self)
 
     def _update(self, r):
-        super()._update(r)
-        #IndexPolicy.getReward(self, arm, reward)
-        #Budgeted.getReward(self, reward)
-        #BernoulliEstimator.getReward(self, arm, reward)
+        #super()._update(r)
+        EmpiricalMeansPolicy._update(r)
+        Budgeted._update(r)
 
     def _evaluate(self):
         i = self.i_last
