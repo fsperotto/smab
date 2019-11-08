@@ -422,8 +422,8 @@ class BanditGamblerPolicy(EmpiricalMeansPolicy, Budgeted):
 
     def _update(self, r):
         #super()._update(r)
-        EmpiricalMeansPolicy._update(r)
-        Budgeted._update(r)
+        EmpiricalMeansPolicy._update(self, r)
+        Budgeted._update(self, r)
 
     def _evaluate(self):
         i = self.i_last
