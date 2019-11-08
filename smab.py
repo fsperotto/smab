@@ -87,7 +87,7 @@ class RandomPolicy():
         self.t = 0
         self.n_i.fill(0)
         self.i_last = 0
-        self.bests = np.arange(k)
+        self.bests = np.arange(self.k)
 
     def choose(self):
         r""" choose an arm with maximal index (uniformly at random):
