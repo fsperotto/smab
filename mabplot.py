@@ -41,6 +41,16 @@ class mabplt:
     """
     def _plot_progression(self, Y, X=None, names=None, linestyles=None, linecolors=None, xlabel="$t$", ylabel="Value", reorder='desc', showlast=False, title=None, filename=None, show=True):
 
+        #number of algorithms
+        m = len(Y)
+        
+        if ( (names is not None) and (len(names) > m) ) :
+            names=names[:m]
+        if ( (linestyles is not None) and (len(names) > m) ) :
+            linestyles=linestyles[:m]
+        if ( (linecolors is not None) and (len(names) > m) ) :
+            linecolors=linecolors[:m]
+        
         if Y.ndim > 1:
 
             #ordering
