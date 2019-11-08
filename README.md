@@ -1,0 +1,2 @@
+# smab
+Survival Multiarmed Bandits
