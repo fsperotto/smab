@@ -722,7 +722,7 @@ class SMAB():
         self.mb = np.mean(b, axis=0)
 
         #time map on negative budget (int 3d matrix [t x j x i])
-        TNB = np.array([[[1 if(v<0) else 0 for v in B_ij] for B_ij in B_i] for B_i in B])
+        TNB = np.array([[[1 if(v<=0) else 0 for v in B_ij] for B_ij in B_i] for B_i in B])
         
         #time dead map (int 3d matrix [t x j x i])
         TD = np.maximum.accumulate(TNB, axis=2)
