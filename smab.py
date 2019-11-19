@@ -217,7 +217,18 @@ class SoftMaxPolicy(BasePolicy):
             eta = np.sqrt(np.log(k) / k)
         assert eta > 0, "Error: the temperature parameter for Softmax class has to be > 0."
         self.eta = eta
+        self.s_i = np.full(k, 0.0)  #: cumulated rewards for each arm
 
+    def reset(self):
+        """ Initialize the policy for a new game."""
+        super().reset()
+        self.s_i.fill(0.0)
+
+    def _update(self, r):
+        """ update estimated means after last observation """
+        super()._update(r)
+        self.s_i[self.i_last] += r
+        
     def _evaluate(self):
         r"""Update the trusts probabilities according to the Softmax (ie Boltzmann) distribution on accumulated rewards, and with the temperature :math:`\eta_t`.
         .. math::
