@@ -65,7 +65,7 @@ class BernoulliArm(RandomArm):
 
 ################################################################################
 
-class RandomPolicy():
+class BasePolicy():
     """ Base class for any policy.
         by default, choose an arm uniformly at random
     """
@@ -79,24 +79,22 @@ class RandomPolicy():
         # Internal state
         self.t = 0  #: Internal time-step
         self.n_i = np.zeros(self.k, dtype=int)  #: Number of pulls of each arm
-        self.i_last = 0
-        self.bests = np.arange(k) #list of best arms (with higher utility)
+        self.i_last = 0   #last pulled arm
 
     def reset(self):
         """ Start the game (fill pulls with 0)."""
         self.t = 0
         self.n_i.fill(0)
         self.i_last = 0
-        self.bests = np.arange(self.k)
 
     def choose(self):
-        r""" choose an arm with maximal index (uniformly at random):
-        .. math:: A(t) \sim U(\arg\max_{1 \leq k \leq K} I_k(t)).
-        .. note:: In almost all cases, there is a unique arm with maximal index, so we loose a lot of time with this generic code, but I couldn't find a way to be more efficient without loosing generality.
-        """
-        # Uniform choice among the best arms
-        #print(self.bests, self.t, self.k)
-        self.i_last = choice(self.bests)
+        """ choose an arm uniformly at random """
+        if ( (self.force_first_trial) and (self.t < self.k) ):
+          # play each arm once, in order
+          self.i_last = self.t
+        else:
+          # uniform choice among the arms
+        self.i_last = randint(self.k)
         return self.i_last
 
     def observe(self, r):
@@ -105,11 +103,6 @@ class RandomPolicy():
         self._update(r)
         #evaluate
         self._evaluate()
-        #define bests
-        if ( (self.force_first_trial) and (self.t < self.k) ):
-          self.bests = np.flatnonzero(self.n_i == 0)
-        else:
-          self.bests = self._calc_bests()
 
     def _update(self, r):
         self.t += 1
@@ -119,15 +112,13 @@ class RandomPolicy():
         """ update utility after last observation """
         pass
 
-    def _calc_bests(self):
-        """ return list of best arms 
-            by default, is just an uniform random arm
-        """
-        return np.array([randint(self.k)])
+################################################################################
+
+RandomPolicy = BasePolicy
 
 ################################################################################
 
-class EmpiricalMeansPolicy(RandomPolicy):
+class IndexPolicy(BasePolicy):
     """ Class that implements a generic index policy.
         by default, implements the empirical means method
         The naive Empirical Means policy for bounded bandits: like UCB but without a bias correction term. Note that it is equal to UCBalpha with alpha=0, only quicker.
@@ -136,37 +127,61 @@ class EmpiricalMeansPolicy(RandomPolicy):
     def __init__(self, k, v_ini=None, force_first_trial=True):
         """ New generic index policy. """
         super().__init__(k, force_first_trial=force_first_trial)
-        #self.mu_i = np.full(k, 0.0)  #: estimated mean for each arm
         self.s_i = np.full(k, 0.0)  #: cumulated rewards for each arm
         self.v_ini = v_ini  if  (v_ini is not None)  else  0.0   #: initial value (index or utility) for the arms
         self.v_i = np.full(k, v_ini)  #: value (index or utility) for each arm
+        self.bests = np.arange(k)   #list of best arms (with equivalent highest utility), candidates
 
     def reset(self):
         """ Initialize the policy for a new game."""
         super().reset()
-        #self.mu_i.fill(0.0)
         self.s_i.fill(0.0)
         self.v_i.fill(self.v_ini)
+        self.bests = np.arange(self.k)
+
+    def choose(self):
+        r""" choose an arm with maximal index (uniformly at random):
+        .. math:: A(t) \sim U(\arg\max_{1 \leq k \leq K} I_k(t)).
+        .. note:: In almost all cases, there is a unique arm with maximal index, so we loose a lot of time with this generic code, but I couldn't find a way to be more efficient without loosing generality.
+        """
+        # Uniform choice among the best arms
+        self.i_last = choice(self.bests)
+        return self.i_last
+
+    def observe(self, r):
+        """ Receive reward, increase t, pulls, and update."""
+        super().observe(r)   # update() and evaluate()
+        #define bests
+        self.bests = self._calc_bests()
 
     def _update(self, r):
         """ update estimated means after last observation """
         super()._update(r)
         self.s_i[self.i_last] += r
-        #mu = self.mu_i[self.i_last]
-        #n = self.n_i[self.i_last]
-        #self.mu_i[self.i_last] = (mu * ((n-1) / n)) + (r / n)
-        #biased_means = self.rewards / (1 + self.pulls)
-        #estimated_means = self.rewards / np.maximum(1, self.pulls)
 
     def _evaluate(self):
         """ update utility after last observation 
             in this case, the utility is the estimated mean
         """
-        self.v_i[self.i_last] = self.s_i[self.i_last] / self.n_i[self.i_last]
+        i = self.i_last
+        n_i = self.n_i[i]
+        s_i = self.s_i[i]
+        self.v_i[i] = s_i / n_i    # value corresponds to the empirical mean
+        #self.v_i[i] = (v * ((n-1) / n)) + (r / n)
 
     def _calc_bests(self):
-        """ define best arms - all with equivalent highest utility """
-        return np.flatnonzero(self.v_i == np.max(self.v_i))
+        """ define best arms - all with equivalent highest utility - then candidates """
+        if ( (self.force_first_trial) and (self.t < self.k) ):
+          # must play each arm once, in order
+          #return np.flatnonzero(self.n_i == 0)
+          return np.array([self.t])
+        else:
+          # uniform choice among the best arms
+          return np.flatnonzero(self.v_i == np.max(self.v_i))
+    
+################################################################################
+
+EmpiricalMeansPolicy = IndexPolicy
 
 ################################################################################
 
@@ -185,13 +200,52 @@ class EpsilonGreedyPolicy(EmpiricalMeansPolicy):
         p = rand()
         """With a probability of epsilon, explore (uniform choice), otherwise exploit based on empirical mean rewards."""
         if p < self.eps: # Proba epsilon : explore
-            return np.array([randint(0, self.k)])
+            return np.array([randint(self.k)])
         else:  # Proba 1 - epsilon : exploit
             return super()._calc_bests()
 
 ################################################################################
+        
+class SoftMaxPolicy(BasePolicy):
+    r"""The Boltzmann Exploration (Softmax) index policy, with a constant temperature :math:`\eta_t`.
+    - Reference: [Algorithms for the multi-armed bandit problem, V.Kuleshov & D.Precup, JMLR, 2008, §2.1](http://www.cs.mcgill.ca/~vkules/bandits.pdf) and [Boltzmann Exploration Done Right, N.Cesa-Bianchi & C.Gentile & G.Lugosi & G.Neu, arXiv 2017](https://arxiv.org/pdf/1705.10257.pdf).
+    - Very similar to Exp3 but uses a Boltzmann distribution.
+      Reference: [Regret Analysis of Stochastic and Nonstochastic Multi-armed Bandit Problems, S.Bubeck & N.Cesa-Bianchi, §3.1](http://sbubeck.com/SurveyBCB12.pdf)
+    """
 
-class UCBPolicy(EmpiricalMeansPolicy):
+    def __init__(self, k, v_ini=None, force_first_trial=True, eta=None):
+        super().__init__(k, v_ini=v_ini, force_first_trial=force_first_trial)
+        if eta is None:  # Use a default value for the temperature
+            eta = np.sqrt(np.log(k) / k)
+        assert eta > 0, "Error: the temperature parameter for Softmax class has to be > 0."
+        self.eta = eta
+
+    def _evaluate(self):
+        r"""Update the trusts probabilities according to the Softmax (ie Boltzmann) distribution on accumulated rewards, and with the temperature :math:`\eta_t`.
+        .. math::
+           \mathrm{trusts}'_k(t+1) &= \exp\left( \frac{X_k(t)}{\eta_t N_k(t)} \right) \\
+           \mathrm{trusts}(t+1) &= \mathrm{trusts}'(t+1) / \sum_{k=1}^{K} \mathrm{trusts}'_k(t+1).
+        If :math:`X_k(t) = \sum_{\sigma=1}^{t} 1(A(\sigma) = k) r_k(\sigma)` is the sum of rewards from arm k.
+        """
+        i = self.i_last
+        n_i = self.n_i[i]
+        s_i = self.s_i[i]
+        eta = self.eta
+        self.v_i[i] = np.exp(s_i / (n_i * eta))
+
+    def choose(self):
+        """random selection with softmax probabilities, thank to :func:`numpy.random.choice`."""
+        if ( (self.force_first_trial) and (self.t < self.k) ):
+          # play each arm once, in order
+          self.i_last = self.t
+        else:
+          # pondered choice among the arms based on their normalize v_i
+        self.i_last = choice(self.k, p=(self.v_i/np.sum(self.v_i))
+        return self.i_last
+
+################################################################################
+
+class UCBPolicy(IndexPolicy):
 
     def __init__(self, k, v_ini=None, force_first_trial=True):
         super().__init__(k, v_ini=v_ini, force_first_trial=force_first_trial)
@@ -213,7 +267,7 @@ class UCBPolicy(EmpiricalMeansPolicy):
 
 ################################################################################
 
-class BernKLUCBPolicy(EmpiricalMeansPolicy):
+class BernKLUCBPolicy(IndexPolicy):
 
     def __init__(self, k, v_ini=None, force_first_trial=True):
         super().__init__(k, v_ini=v_ini, force_first_trial=force_first_trial)
@@ -293,7 +347,7 @@ class BernKLUCBPolicy(EmpiricalMeansPolicy):
 
 ################################################################################
 
-class ThompsonPolicy(EmpiricalMeansPolicy):
+class ThompsonPolicy(IndexPolicy):
     r"""The Thompson (Bayesian) index policy.
     - By default, it uses a Beta posterior (:class:`Policies.Posterior.Beta`), one by arm.
     - Prior is initially flat, i.e., :math:`a=\alpha_0=1` and :math:`b=\beta_0=1`.
@@ -317,7 +371,7 @@ class ThompsonPolicy(EmpiricalMeansPolicy):
 
 ################################################################################
 
-class BayesUCBPolicy(EmpiricalMeansPolicy):
+class BayesUCBPolicy(IndexPolicy):
     """ The Bayes-UCB policy.
     - By default, it uses a Beta posterior (:class:`Policies.Posterior.Beta`), one by arm.
     -Reference: [Kaufmann, Cappé & Garivier - AISTATS, 2012].
@@ -340,7 +394,7 @@ class BayesUCBPolicy(EmpiricalMeansPolicy):
 ################################################################################
 
 # class for the marab algorithm
-class MaRaBPolicy(EmpiricalMeansPolicy):
+class MaRaBPolicy(IndexPolicy):
     
     def __init__(self, k, v_ini=None, force_first_trial=True, alpha=0.05, C=1e-6):
         super().__init__(k, v_ini=v_ini, force_first_trial=force_first_trial)
@@ -388,11 +442,11 @@ class Budgeted:
 
 ################################################################################
 
-class BanditGamblerPolicy(EmpiricalMeansPolicy, Budgeted):
+class BanditGamblerPolicy(IndexPolicy, Budgeted):
 
     def __init__(self, k, v_ini=None, force_first_trial=True, d=None, b_0=None):
         #super().__init__(k, v_ini=v_ini, force_first_trial=force_first_trial, d=d, b_0=b_0)
-        EmpiricalMeansPolicy.__init__(self, k, v_ini=v_ini, force_first_trial=force_first_trial)
+        IndexPolicy.__init__(self, k, v_ini=v_ini, force_first_trial=force_first_trial)
         Budgeted.__init__(self, k, d=d, b_0=b_0)
 
     #@jit
@@ -405,12 +459,12 @@ class BanditGamblerPolicy(EmpiricalMeansPolicy, Budgeted):
 
     def reset(self):
         #super().reset()
-        EmpiricalMeansPolicy.reset(self)
+        IndexPolicy.reset(self)
         Budgeted.reset(self)
 
     def _update(self, r):
         #super()._update(r)
-        EmpiricalMeansPolicy._update(self, r)
+        IndexPolicy._update(self, r)
         Budgeted._update(self, r)
 
     def _evaluate(self):
