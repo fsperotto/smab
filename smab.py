@@ -479,7 +479,7 @@ class BanditGamblerPolicy(IndexPolicy, Budgeted):
 class SMAB():
     """ Base survival MAB process. """
 
-    def __init__(self, A, G, h, d=None, n=1, w=None, b_0=None, run=False, save_only_means=True):
+    def __init__(self, A, G, h, b_0, d=None, n=1, w=None, run=False, save_only_means=True):
         """
          A : List of Arms
          G : List of Algorithms
@@ -514,7 +514,7 @@ class SMAB():
         self.a_worst = np.argmin(self.mu_a)        #worst arm index
 
         #budget
-        self.b_0 = b_0   #None means classic MAB
+        self.b_0 = b_0   
         
         #algorithms (1 ... g ... m)
         self.G = G if isinstance(G, Iterable) else [G]
@@ -549,8 +549,7 @@ class SMAB():
         R = np.zeros((self.n, self.m, self.h), dtype=float)  #rewards
         SR = np.zeros((self.n, self.m, self.h), dtype=float)  #cumulated rewards
         H = np.full((self.n, self.m, self.h), -1, dtype=int) #history of actions
-        if (self.b_0 is not None):
-            B = np.zeros((self.n, self.m, self.h), dtype=float)  #budget
+        B = np.zeros((self.n, self.m, self.h), dtype=float)  #budget
 
         # Draw for every arm all repetitions
         if prev_draw:
@@ -586,11 +585,10 @@ class SMAB():
                     s += r
                     R[j, g, t] = r
                     SR[j, g, t] = s
-                    if (self.b_0 is not None):
-                        b = s + self.b_0
-                        B[j, g, t] = b
-                        if (b == 0):
-                            break
+                    b = s + self.b_0
+                    B[j, g, t] = b
+                    if (b == 0):
+                        break
         
         #actions history, with initial action index being 1, not 0
         H1 = H+1
