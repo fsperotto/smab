@@ -204,31 +204,20 @@ class EpsilonGreedyPolicy(EmpiricalMeansPolicy):
 
 ################################################################################
         
-class SoftMaxPolicy(BasePolicy):
+class SoftMaxPolicy(EmpiricalMeansPolicy):
     r"""The Boltzmann Exploration (Softmax) index policy, with a constant temperature :math:`\eta_t`.
     - Reference: [Algorithms for the multi-armed bandit problem, V.Kuleshov & D.Precup, JMLR, 2008, §2.1](http://www.cs.mcgill.ca/~vkules/bandits.pdf) and [Boltzmann Exploration Done Right, N.Cesa-Bianchi & C.Gentile & G.Lugosi & G.Neu, arXiv 2017](https://arxiv.org/pdf/1705.10257.pdf).
     - Very similar to Exp3 but uses a Boltzmann distribution.
       Reference: [Regret Analysis of Stochastic and Nonstochastic Multi-armed Bandit Problems, S.Bubeck & N.Cesa-Bianchi, §3.1](http://sbubeck.com/SurveyBCB12.pdf)
     """
 
-    def __init__(self, k, force_first_trial=True, eta=None):
-        super().__init__(k, force_first_trial=force_first_trial)
+    def __init__(self, k, v_ini=None, force_first_trial=True, eta=None):
+        super().__init__(k, v_ini=v_ini, force_first_trial=force_first_trial)
         if eta is None:  # Use a default value for the temperature
             eta = np.sqrt(np.log(k) / k)
         assert eta > 0, "Error: the temperature parameter for Softmax class has to be > 0."
         self.eta = eta
-        self.s_i = np.full(k, 0.0)  #: cumulated rewards for each arm
 
-    def reset(self):
-        """ Initialize the policy for a new game."""
-        super().reset()
-        self.s_i.fill(0.0)
-
-    def _update(self, r):
-        """ update estimated means after last observation """
-        super()._update(r)
-        self.s_i[self.i_last] += r
-        
     def _evaluate(self):
         r"""Update the trusts probabilities according to the Softmax (ie Boltzmann) distribution on accumulated rewards, and with the temperature :math:`\eta_t`.
         .. math::
