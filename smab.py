@@ -475,6 +475,18 @@ class BanditGamblerPolicy(IndexPolicy, Budgeted):
 
 ################################################################################
 
+class BanditGamblerUCBPolicy(BanditGamblerPolicy):
+
+    def ruin_estimated_prob(self, i):
+        n_i = self.n_i[i]
+        x_i = self.s_i[i]
+        y_i = n_i - self.s_i[i]
+        b = max(1.0, self.b)
+        factor = np.log(self.t)/self.t
+        return beta.cdf(0.5, x_i+1, y_i+1) + integral(lambda p, x, y, b : ((1-p)/p)**b * beta.pdf(p, x*factor+1, y*factor+1), 0.5, 1.0, (x_i, y_i, b))[0]
+
+################################################################################
+
 
 class SMAB():
     """ Base survival MAB process. """
