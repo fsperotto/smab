@@ -569,7 +569,8 @@ class SMAB():
 
         # For each repetition
         #for j in tqdm(range(self.n), desc=tqdm_desc_rep, leave=(tqdm_leave and self.m == 1), disable=(tqdm_disable or self.n == 1)):
-        for j in tqdm(range(self.n), desc=tqdm_desc_rep, leave=tqdm_leave, disable=(tqdm_disable or self.n == 1)):
+        #for j in tqdm(range(self.n), desc=tqdm_desc_rep, leave=tqdm_leave, disable=(tqdm_disable or self.n == 1)):
+        for j in tqdm(range(self.n)):
 
             # For each algorithm
             #for g, alg in enumerate(tqdm(self.G, desc=tqdm_desc_alg, leave=tqdm_leave, disable=(tqdm_disable or self.m == 1))):
@@ -580,7 +581,8 @@ class SMAB():
                 s = 0.0
 
                 # Loop on time
-                for t in tqdm(self.T, desc=tqdm_desc_it, leave=tqdm_leave, disable=(tqdm_disable or self.n > 1 or self.m > 1) ):
+                #for t in tqdm(self.T, desc=tqdm_desc_it, leave=tqdm_leave, disable=(tqdm_disable or self.n > 1 or self.m > 1) ):
+                for t in self.T:
                     # The algorithm chooses the arm to play
                     i = alg.choose()
                     # The arm played gives reward
