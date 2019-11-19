@@ -331,8 +331,8 @@ class BayesUCBPolicy(EmpiricalMeansPolicy):
         .. math:: I_k(t) = \mathrm{Quantile}\left(\mathrm{Beta}(1 + S_k(t), 1 + N_k(t) - S_k(t)), 1 - \frac{1}{t}\right).
         """
         i = self.i_last
-        q = 1. - (1. / (1 + self.n_i[i]))
-        #q = 1. - (1. / (1 + self.t))
+        #q = 1. - (1. / (1 + self.n_i[i]))
+        q = 1. - (1. / (1 + self.t))
         a = self.s_i[i] + 1
         b = self.n_i[i] - self.s_i[i] + 1
         self.v_i[i] = beta.ppf(q, a, b)
@@ -418,6 +418,7 @@ class BanditGamblerPolicy(EmpiricalMeansPolicy, Budgeted):
         self.v_i[i] = 1.0 - self.ruin_estimated_prob(i)
 
 ################################################################################
+
 
 class MAB():
     """ Base MAB process. """
