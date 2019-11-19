@@ -240,7 +240,7 @@ class SoftMaxPolicy(BasePolicy):
           self.i_last = self.t
         else:
           # pondered choice among the arms based on their normalize v_i
-        self.i_last = choice(self.k, p=(self.v_i/np.sum(self.v_i))
+          self.i_last = choice(self.k, p=(self.v_i/np.sum(self.v_i))
         return self.i_last
 
 ################################################################################
