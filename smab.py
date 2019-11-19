@@ -211,8 +211,8 @@ class SoftMaxPolicy(BasePolicy):
       Reference: [Regret Analysis of Stochastic and Nonstochastic Multi-armed Bandit Problems, S.Bubeck & N.Cesa-Bianchi, §3.1](http://sbubeck.com/SurveyBCB12.pdf)
     """
 
-    def __init__(self, k, v_ini=None, force_first_trial=True, eta=None):
-        super().__init__(k, v_ini=v_ini, force_first_trial=force_first_trial)
+    def __init__(self, k, force_first_trial=True, eta=None):
+        super().__init__(k, force_first_trial=force_first_trial)
         if eta is None:  # Use a default value for the temperature
             eta = np.sqrt(np.log(k) / k)
         assert eta > 0, "Error: the temperature parameter for Softmax class has to be > 0."
