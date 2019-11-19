@@ -472,8 +472,8 @@ class BanditGamblerPolicy(IndexPolicy, Budgeted):
 ################################################################################
 
 
-class MAB():
-    """ Base MAB process. """
+class SMAB():
+    """ Base survival MAB process. """
 
     def __init__(self, A, G, h, d=None, n=1, w=None, b_0=None, run=False, save_only_means=True):
         """
@@ -510,7 +510,7 @@ class MAB():
         self.a_worst = np.argmin(self.mu_a)        #worst arm index
 
         #budget
-        self.b_0 = b_0   if  (b_0 is not None)  else   k
+        self.b_0 = b_0   #None means classic MAB
         
         #algorithms (1 ... g ... m)
         self.G = G if isinstance(G, Iterable) else [G]
@@ -541,9 +541,12 @@ class MAB():
         #algorithms (1 ... g ... m)
 
         # Initialize Rewards and History of selected Actions (3d matrices [t x g x i])
-        X = np.zeros((self.n, self.m, self.h), dtype=float)
-        R = np.zeros((self.n, self.m, self.h), dtype=float)
-        H = np.zeros((self.n, self.m, self.h), dtype=int)
+        X = np.zeros((self.n, self.m, self.h), dtype=float)  #successes
+        R = np.zeros((self.n, self.m, self.h), dtype=float)  #rewards
+        SR = np.zeros((self.n, self.m, self.h), dtype=float)  #cumulated rewards
+        H = np.full((self.n, self.m, self.h), -1, dtype=int) #history of actions
+        if (self.b_0 is not None):
+            B = np.zeros((self.n, self.m, self.h), dtype=float)  #budget
 
         # Draw for every arm all repetitions
         if prev_draw:
@@ -559,6 +562,7 @@ class MAB():
 
                 # Initialize
                 alg.reset()
+                s = 0.0
 
                 # Loop on time
                 for t in tqdm(self.T, desc=tqdm_desc_it, leave=tqdm_leave, disable=(tqdm_disable or self.n > 1 or self.m > 1) ):
@@ -572,11 +576,17 @@ class MAB():
                     # The reward is returned to the algorithm
                     alg.observe(x)
                     # Save both
-                    X[j, g, t] = x
                     H[j, g, t] = i
-
-        #extended rewards domain
-        R = X * self.d.r_amp + self.d.r_min
+                    X[j, g, t] = x
+                    r = x * self.d.r_amp + self.d.r_min
+                    s += r
+                    R[j, g, t] = r
+                    SR[j, g, t] = s
+                    if (self.b_0 is not None):
+                        b = s + self.b_0
+                        B[j, g, t] = b
+                        if (b == 0):
+                            break
         
         #actions history, with initial action index being 1, not 0
         H1 = H+1
@@ -623,7 +633,7 @@ class MAB():
         self.mf_a = np.mean(f_a, axis=0)
 
         #progressive cumulative rewards (float 3d matrix [t x j x i])
-        SR = np.cumsum(R, axis=2, dtype='float')
+        #SR = np.cumsum(R, axis=2, dtype='float')
 
         #averaged progressive cumulative rewards (float 2d matrix [t x j]) #averaged over repetitions
         self.MSR = np.mean(SR, axis=0)
@@ -693,7 +703,7 @@ class MAB():
 
         #progressive budget (float 3d matrix [t x j x i])
         # i.e. the progressive cumulative rewards plus initial budget
-        B = SR + self.b_0
+        #B = SR + self.b_0
 
         ##progressive on negative counter of episodes (float 3d matrix [t x j])
         ## i.e. the number of episodes where, at each time t, alg j is running on negative budget
