@@ -297,19 +297,6 @@ class ThompsonPolicy(EmpiricalMeansPolicy):
     r"""The Thompson (Bayesian) index policy.
     - By default, it uses a Beta posterior (:class:`Policies.Posterior.Beta`), one by arm.
     - Prior is initially flat, i.e., :math:`a=\alpha_0=1` and :math:`b=\beta_0=1`.
-    - A non-flat prior for each arm can be given with parameters ``a`` and ``b``, for instance::
-        nbArms = 2
-        prior_failures  = a = 100
-        prior_successes = b = 50
-        policy = Thompson(nbArms, a=a, b=b)
-        np.mean([policy.choice() for _ in range(1000)])  # 0.515 ~= 0.5: each arm has same prior!
-    - A different prior for each arm can be given with parameters ``params_for_each_posterior``, for instance::
-        nbArms = 2
-        params0 = { 'a': 10, 'b': 5}  # mean 1/3
-        params1 = { 'a': 5, 'b': 10}  # mean 2/3
-        params = [params0, params1]
-        policy = Thompson(nbArms, params_for_each_posterior=params)
-        np.mean([policy.choice() for _ in range(1000)])  # 0.9719 ~= 1: arm 1 is better than arm 0 !
     - Reference: [Thompson - Biometrika, 1933].
     """
 
@@ -324,7 +311,7 @@ class ThompsonPolicy(EmpiricalMeansPolicy):
         """
         for i in range(self.k):
           a = self.s_i[i] + 1
-          b = self.t - self.s_i[i] + 1
+          b = self.n_i[i] - self.s_i[i] + 1
           self.v_i[i] = beta.rvs(a, b)
 
 
@@ -344,9 +331,10 @@ class BayesUCBPolicy(EmpiricalMeansPolicy):
         .. math:: I_k(t) = \mathrm{Quantile}\left(\mathrm{Beta}(1 + S_k(t), 1 + N_k(t) - S_k(t)), 1 - \frac{1}{t}\right).
         """
         i = self.i_last
-        q = 1. - 1. / (1 + self.t)
+        q = 1. - (1. / (1 + self.n_i[i]))
+        #q = 1. - (1. / (1 + self.t))
         a = self.s_i[i] + 1
-        b = self.t - self.s_i[i] + 1
+        b = self.n_i[i] - self.s_i[i] + 1
         self.v_i[i] = beta.ppf(q, a, b)
 
 ################################################################################
