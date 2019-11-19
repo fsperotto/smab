@@ -144,8 +144,12 @@ class IndexPolicy(BasePolicy):
         .. math:: A(t) \sim U(\arg\max_{1 \leq k \leq K} I_k(t)).
         .. note:: In almost all cases, there is a unique arm with maximal index, so we loose a lot of time with this generic code, but I couldn't find a way to be more efficient without loosing generality.
         """
-        # Uniform choice among the best arms
-        self.i_last = choice(self.bests)
+        if ( (self.force_first_trial) and (self.t < self.k) ):
+          # play each arm once, in order
+          self.i_last = self.t
+        else:
+          # Uniform choice among the best arms
+          self.i_last = choice(self.bests)
         return self.i_last
 
     def observe(self, r):
@@ -171,13 +175,7 @@ class IndexPolicy(BasePolicy):
 
     def _calc_bests(self):
         """ define best arms - all with equivalent highest utility - then candidates """
-        if ( (self.force_first_trial) and (self.t < self.k) ):
-          # must play each arm once, in order
-          #return np.flatnonzero(self.n_i == 0)
-          return np.array([self.t])
-        else:
-          # uniform choice among the best arms
-          return np.flatnonzero(self.v_i == np.max(self.v_i))
+        return np.flatnonzero(self.v_i == np.max(self.v_i))
     
 ################################################################################
 
