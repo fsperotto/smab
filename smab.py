@@ -229,7 +229,7 @@ class SoftMaxPolicy(EmpiricalMeansPolicy):
         n_i = self.n_i[i]
         s_i = self.s_i[i]
         eta = self.eta
-        self.v_i[i] = np.exp(s_i / (n_i * eta))
+        self.v_i[i] = np.exp(s_i / (eta * n_i))
 
     def choose(self):
         """random selection with softmax probabilities, thank to :func:`numpy.random.choice`."""
@@ -238,7 +238,11 @@ class SoftMaxPolicy(EmpiricalMeansPolicy):
           self.i_last = self.t
         else:
           # pondered choice among the arms based on their normalize v_i
-          self.i_last = choice(self.k, p=(self.v_i/np.sum(self.v_i)))
+          s = np.sum(self.v_i)
+          if s > 0:
+            self.i_last = choice(self.k, p=(self.v_i/s))
+          else:
+            self.i_last = randint(self.k)
         return self.i_last
 
 ################################################################################
