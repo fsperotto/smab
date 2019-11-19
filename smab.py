@@ -94,7 +94,7 @@ class BasePolicy():
           self.i_last = self.t
         else:
           # uniform choice among the arms
-        self.i_last = randint(self.k)
+          self.i_last = randint(self.k)
         return self.i_last
 
     def observe(self, r):
