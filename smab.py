@@ -558,10 +558,10 @@ class SMAB():
 
         # Initialize Rewards and History of selected Actions (3d matrices [t x g x i])
         X = np.zeros((self.n, self.m, self.h), dtype=float)  #successes
-        R = np.zeros((self.n, self.m, self.h), dtype=float)  #rewards
-        SR = np.zeros((self.n, self.m, self.h), dtype=float)  #cumulated rewards
+        #R = np.zeros((self.n, self.m, self.h), dtype=float)  #rewards
+        #SR = np.zeros((self.n, self.m, self.h), dtype=float)  #cumulated rewards
         H = np.full((self.n, self.m, self.h), -1, dtype=int) #history of actions
-        B = np.zeros((self.n, self.m, self.h), dtype=float)  #budget
+        #B = np.zeros((self.n, self.m, self.h), dtype=float)  #budget
 
         # Draw for every arm all repetitions
         if prev_draw:
@@ -578,7 +578,7 @@ class SMAB():
 
                 # Initialize
                 alg.reset()
-                s = 0.0
+                #s = 0.0
 
                 # Loop on time
                 #for t in tqdm(self.T, desc=tqdm_desc_it, leave=tqdm_leave, disable=(tqdm_disable or self.n > 1 or self.m > 1) ):
@@ -595,15 +595,17 @@ class SMAB():
                     # Save both
                     H[j, g, t] = i
                     X[j, g, t] = x
-                    r = x * self.d.r_amp + self.d.r_min
-                    s += r
-                    R[j, g, t] = r
-                    SR[j, g, t] = s
-                    b = s + self.b_0
-                    B[j, g, t] = b
-                    if (b == 0):
-                        break
+                    #r = x * self.d.r_amp + self.d.r_min
+                    #s += r
+                    #R[j, g, t] = r
+                    #SR[j, g, t] = s
+                    #b = s + self.b_0
+                    #B[j, g, t] = b
+                    #if (b == 0):
+                    #    break
         
+        R = X * self.d.r_amp + self.d.r_min
+
         #actions history, with initial action index being 1, not 0
         H1 = H+1
 
@@ -649,7 +651,7 @@ class SMAB():
         self.mf_a = np.mean(f_a, axis=0)
 
         #progressive cumulative rewards (float 3d matrix [t x j x i])
-        #SR = np.cumsum(R, axis=2, dtype='float')
+        SR = np.cumsum(R, axis=2, dtype='float')
 
         #averaged progressive cumulative rewards (float 2d matrix [t x j]) #averaged over repetitions
         self.MSR = np.mean(SR, axis=0)
@@ -719,7 +721,7 @@ class SMAB():
 
         #progressive budget (float 3d matrix [t x j x i])
         # i.e. the progressive cumulative rewards plus initial budget
-        #B = SR + self.b_0
+        B = SR + self.b_0
 
         ##progressive on negative counter of episodes (float 3d matrix [t x j])
         ## i.e. the number of episodes where, at each time t, alg j is running on negative budget
