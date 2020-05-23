@@ -24,7 +24,10 @@ import datetime
 class Domain():
 
     def __init__(self, r_min=0.0, r_max=1.0):
-        """ class for reward domain. """
+        """ class for reward domain. 
+            Arms always return values into the interval [0, 1].
+            For budgeted problems, the domain is used for redimensioning r
+        """
         assert r_max >= r_min, "Error, the maximal reward must be greater than the minimal."  # DEBUG
         self.r_min = r_min  #: Lower values for rewards
         self.r_max = r_max  #: Higher values for rewards
@@ -70,12 +73,12 @@ class BasePolicy():
         by default, choose an arm uniformly at random
     """
 
-    def __init__(self, k, force_first_trial=True):
+    def __init__(self, k, w=0):
         """ New policy."""
         # Parameters
         assert k > 0, "Error, the number of arms must be a positive integer."  # DEBUG
         self.k = k  #: Number of Arms
-        self.force_first_trial = force_first_trial   #: if True, each arm must be played at least once on the beginning 
+        self.w = w   #: if w>0, each arm must be played at least w times on the beginning (initial trials)
         # Internal state
         self.t = 0  #: Internal time-step
         self.n_i = np.zeros(self.k, dtype=int)  #: Number of pulls of each arm
@@ -89,9 +92,9 @@ class BasePolicy():
 
     def choose(self):
         """ choose an arm uniformly at random """
-        if ( (self.force_first_trial) and (self.t < self.k) ):
-          # play each arm once, in order
-          self.i_last = self.t
+        if ( (self.w > 0) and (self.t < (self.k * self.w)) ):
+          # play each arm w times, in order
+          self.i_last = self.t % self.k
         else:
           # uniform choice among the arms
           self.i_last = randint(self.k)
@@ -121,12 +124,13 @@ RandomPolicy = BasePolicy
 class IndexPolicy(BasePolicy):
     """ Class that implements a generic index policy.
         by default, implements the empirical means method
-        The naive Empirical Means policy for bounded bandits: like UCB but without a bias correction term. Note that it is equal to UCBalpha with alpha=0, only quicker.
+        The naive Empirical Means policy for bounded bandits: like UCB but without a bias correction term. 
+        Note that it is equal to UCBalpha with alpha=0, only quicker.
     """
 
-    def __init__(self, k, v_ini=None, force_first_trial=True):
+    def __init__(self, k, v_ini=None, w=1):
         """ New generic index policy. """
-        super().__init__(k, force_first_trial=force_first_trial)
+        super().__init__(k, w=w)
         self.s_i = np.full(k, 0.0)  #: cumulated rewards for each arm
         self.v_ini = v_ini  if  (v_ini is not None)  else  0.0   #: initial value (index or utility) for the arms
         self.v_i = np.full(k, v_ini)  #: value (index or utility) for each arm
@@ -188,8 +192,8 @@ class EpsilonGreedyPolicy(EmpiricalMeansPolicy):
     - At every time step, a fully uniform random exploration has probability :math:`\varepsilon(t)` to happen, otherwise an exploitation is done.
     """
 
-    def __init__(self, k, v_ini=None, force_first_trial=True, eps=0.9):
-        super().__init__(k, v_ini=v_ini, force_first_trial=force_first_trial)
+    def __init__(self, k, v_ini=None, w=1, eps=0.9):
+        super().__init__(k, v_ini=v_ini, w=w)
         assert 0 <= eps <= 1, "Error: the 'epsilon' parameter for EpsilonGreedy class has to be in [0, 1]."  # DEBUG
         self.eps = eps
 
@@ -211,8 +215,8 @@ class SoftMaxPolicy(EmpiricalMeansPolicy):
       Reference: [Regret Analysis of Stochastic and Nonstochastic Multi-armed Bandit Problems, S.Bubeck & N.Cesa-Bianchi, §3.1](http://sbubeck.com/SurveyBCB12.pdf)
     """
 
-    def __init__(self, k, v_ini=None, force_first_trial=True, eta=None):
-        super().__init__(k, v_ini=v_ini, force_first_trial=force_first_trial)
+    def __init__(self, k, v_ini=None, w=1, eta=None):
+        super().__init__(k, v_ini=v_ini, w=w)
         if eta is None:  # Use a default value for the temperature
             eta = np.sqrt(np.log(k) / k)
         assert eta > 0, "Error: the temperature parameter for Softmax class has to be > 0."
@@ -249,8 +253,8 @@ class SoftMaxPolicy(EmpiricalMeansPolicy):
 
 class UCBPolicy(IndexPolicy):
 
-    def __init__(self, k, v_ini=None, force_first_trial=True):
-        super().__init__(k, v_ini=v_ini, force_first_trial=force_first_trial)
+    def __init__(self, k, v_ini=None, w=1):
+        super().__init__(k, v_ini=v_ini, w=w)
 
     def _evaluate(self):
         r""" Compute the current index, at time t and after :math:`N_k(t)` pulls of arm k:
@@ -271,8 +275,8 @@ class UCBPolicy(IndexPolicy):
 
 class BernKLUCBPolicy(IndexPolicy):
 
-    def __init__(self, k, v_ini=None, force_first_trial=True):
-        super().__init__(k, v_ini=v_ini, force_first_trial=force_first_trial)
+    def __init__(self, k, v_ini=None, w=1):
+        super().__init__(k, v_ini=v_ini, w=w)
 
     @jit
     def _klBern(self, x, y):
@@ -356,8 +360,8 @@ class ThompsonPolicy(IndexPolicy):
     - Reference: [Thompson - Biometrika, 1933].
     """
 
-    def __init__(self, k, v_ini=None, force_first_trial=True):
-        super().__init__(k, v_ini=v_ini, force_first_trial=force_first_trial)
+    def __init__(self, k, v_ini=None, w=1):
+        super().__init__(k, v_ini=v_ini, w=w)
 
     def _evaluate(self):
         r""" Compute the current index, at time t and after :math:`N_k(t)` pulls of arm k, giving :math:`S_k(t)` rewards of 1, by sampling from the Beta posterior:
@@ -379,8 +383,8 @@ class BayesUCBPolicy(IndexPolicy):
     -Reference: [Kaufmann, Cappé & Garivier - AISTATS, 2012].
     """
     
-    def __init__(self, k, v_ini=None, force_first_trial=True):
-        super().__init__(k, v_ini=v_ini, force_first_trial=force_first_trial)
+    def __init__(self, k, v_ini=None, w=1):
+        super().__init__(k, v_ini=v_ini, w=w)
 
     def _evaluate(self):
         r""" Compute the current index, at time t and after :math:`N_k(t)` pulls of arm k, giving :math:`S_k(t)` rewards of 1, by taking the :math:`1 - \frac{1}{t}` quantile from the Beta posterior:
@@ -398,10 +402,10 @@ class BayesUCBPolicy(IndexPolicy):
 # class for the marab algorithm
 class MaRaBPolicy(IndexPolicy):
     
-    def __init__(self, k, v_ini=None, force_first_trial=True, alpha=0.05, C=1e-6):
-        super().__init__(k, v_ini=v_ini, force_first_trial=force_first_trial)
+    def __init__(self, k, v_ini=None, w=1, alpha=0.05, c=1e-6):
+        super().__init__(k, v_ini=v_ini, w=w)
         self.alpha = alpha
-        self.C = C
+        self.c = c
         self.reward_samples = [np.array([0.0]) for a in range(k)]
         
     def reset(self):
@@ -420,7 +424,7 @@ class MaRaBPolicy(IndexPolicy):
         # calculating lower confidence bound
         lcb = np.sqrt(np.log(np.ceil(self.alpha*self.t))/self.n_i[i])
         # adding score to scores list
-        self.v_i[i] = empirical_cvar - self.C * lcb
+        self.v_i[i] = empirical_cvar - self.c * lcb
 
 ################################################################################
 
@@ -428,7 +432,7 @@ class Budgeted:
 
     def __init__(self, k, d=None, b_0=None):
         if b_0 is None:
-          b_0=k
+            b_0 = k
         self.b_0 = b_0
         self.d = d  if  (isinstance(d, Domain))  else  Domain()
         self.b = b_0   #budget
@@ -444,11 +448,152 @@ class Budgeted:
 
 ################################################################################
 
+class Estimator:
+
+    def __init__(self, k):
+        self.avg_i = np.zeros(k)
+
+    def reset(self):
+        self.avg_i.fill(0.0)
+
+    def _update(self, r):
+        self.avg_i[self.i_last] = (self.avg_i[self.i_last] * (self.n_i[self.i_last]-1) + r) / self.n_i[self.i_last]
+
+
+class BernoulliEstimator(Estimator):
+
+    def __init__(self, k):
+        Estimator.__init__(self, k)
+        self.x_i = np.zeros(k, dtype='int')   #number of successes
+
+    def reset(self):
+        Estimator.startGame(self)
+        self.x_i.fill(0)
+
+    def _update(self, r):
+        Estimator._update(self, r)
+        if (r > 0):
+            self.x_i[self.i_last] += 1
+
+
+
+#####################################################
+
+
+class AlarmedPolicy(Budgeted, Estimator):
+
+    def __init__(self, k, d=None, b_0=None, omega=1.0):
+        Budgeted.__init__(self, k, d=d, b_0=b_0)
+        Estimator.__init__(self, k)
+        self.omega = omega   #safety-critical warning threshold for budget level
+
+    def reset(self):
+        Budgeted.reset(self)
+        Estimator.reset(self)
+
+    def _update(self, r):
+        Budgeted._update(self, r)
+        Estimator._update(self, r)
+
+    def choose(self):
+        #sufficient budget
+        if self.b > self.omega:
+            return None
+        #low budget
+        else:
+            if np.max(self.avg_i) > 0:
+                # greedy:
+                #  = uniform choice among the best arms
+                self.i_last = np.random.choice(np.flatnonzero(self.estmeans == np.max(self.estmeans)))
+            else:
+                # otherwise:
+                #  = continue using ancestor policy
+                self.i_last = None
+        return self.i_last
+
+#####################################################
+
+
+class AlarmedUCBPolicy(UCBPolicy, AlarmedPolicy):
+
+    def __str__(self):
+        return f"Alarmed-UCB($omega={self.omega}$)"
+
+    def __init__(self, k, d=None, b_0=None, omega=1.0):
+        UCBPolicy.__init__(self, k)
+        AlarmedPolicy.__init__(self, k, d=d, b_0=b_0)
+
+    def reset(self):
+        UCBPolicy.reset(self)
+        AlarmedPolicy.reset(self)
+
+    def _update(self, r):
+        UCBPolicy._update(self, r)
+        AlarmedPolicy._update(self, r)
+
+    def choose(self):
+        AlarmedPolicy.choose(self)
+        if self.i_last is None:
+            UCBPolicy.choose(self)
+        return self.i_last
+
+
+class AlarmedBernKLUCBPolicy(KLUCBPolicy, AlarmedPolicy):
+
+    def __str__(self):
+        return f"Safe-KL-UCB($omega={self.omega}$)"
+
+    def __init__(self, k, d=None, b_0=None, omega=1.0):
+        KLUCBPolicy.__init__(self, k)
+        AlarmedPolicy.__init__(self, k, d=d, b_0=b_0)
+
+    def reset(self):
+        KLUCBPolicy.reset(self)
+        AlarmedPolicy.reset(self)
+
+    def _update(self, r):
+        KLUCBPolicy._update(self, r)
+        AlarmedPolicy._update(self, r)
+
+    def choose(self):
+        AlarmedPolicy.choose(self)
+        if self.i_last is None:
+            KLUCBPolicy.choose(self)
+        return self.i_last
+
+
+class AlarmedEpsilonGreedy(EpsilonGreedyPolicy, AlarmedPolicy):
+
+    def __str__(self):
+        return f"Safe-$\epsilon$-greedy($\epsilon={self._epsilon}, \omega={self.omega}$)"
+
+    def __init__(self, k, d=None, b_0=None, omega=1.0):
+        EpsilonGreedyPolicy.__init__(self, k)
+        AlarmedPolicy.__init__(self, k, d=d, b_0=b_0)
+
+    def reset(self):
+        EpsilonGreedyPolicy.reset(self)
+        AlarmedPolicy.reset(self)
+
+    def _update(self, r):
+        EpsilonGreedyPolicy._update(self, r)
+        AlarmedPolicy._update(self, r)
+
+    def choose(self):
+        AlarmedPolicy.choose(self)
+        if self.i_last is None:
+            EpsilonGreedyPolicy.choose(self)
+        return self.i_last
+
+    
+#####################################################
+
+
 class BanditGamblerPolicy(IndexPolicy, Budgeted):
 
-    def __init__(self, k, v_ini=None, force_first_trial=True, d=None, b_0=None):
-        #super().__init__(k, v_ini=v_ini, force_first_trial=force_first_trial, d=d, b_0=b_0)
-        IndexPolicy.__init__(self, k, v_ini=v_ini, force_first_trial=force_first_trial)
+    def __init__(self, k, v_ini=None, w=1, d=None, b_0=None):
+        #super().__init__(k, v_ini=v_ini, w=w, d=d, b_0=b_0)
+        IndexPolicy.__init__(self, k, v_ini=v_ini, w=w)
         Budgeted.__init__(self, k, d=d, b_0=b_0)
 
     #@jit
