@@ -504,7 +504,7 @@ class AlarmedPolicy(Budgeted, Estimator):
             if np.max(self.avg_i) > 0:
                 # greedy:
                 #  = uniform choice among the best arms
-                self.i_last = np.random.choice(np.flatnonzero(self.estmeans == np.max(self.estmeans)))
+                self.i_last = np.random.choice(np.flatnonzero(self.avg_i == np.max(self.avg_i)))
             else:
                 # otherwise:
                 #  = continue using ancestor policy
