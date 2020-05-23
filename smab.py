@@ -148,9 +148,9 @@ class IndexPolicy(BasePolicy):
         .. math:: A(t) \sim U(\arg\max_{1 \leq k \leq K} I_k(t)).
         .. note:: In almost all cases, there is a unique arm with maximal index, so we loose a lot of time with this generic code, but I couldn't find a way to be more efficient without loosing generality.
         """
-        if ( (self.force_first_trial) and (self.t < self.k) ):
-          # play each arm once, in order
-          self.i_last = self.t
+        if ( (self.w > 0) and (self.t < (self.k * self.w)) ):
+          # play each arm w times, in order
+          self.i_last = self.t % self.k
         else:
           # Uniform choice among the best arms
           self.i_last = choice(self.bests)
@@ -237,9 +237,9 @@ class SoftMaxPolicy(EmpiricalMeansPolicy):
 
     def choose(self):
         """random selection with softmax probabilities, thank to :func:`numpy.random.choice`."""
-        if ( (self.force_first_trial) and (self.t < self.k) ):
-          # play each arm once, in order
-          self.i_last = self.t
+        if ( (self.w > 0) and (self.t < (self.k * self.w)) ):
+          # play each arm w times, in order
+          self.i_last = self.t % self.k
         else:
           # pondered choice among the arms based on their normalize v_i
           s = np.sum(self.v_i)
@@ -567,8 +567,8 @@ class AlarmedEpsilonGreedyPolicy(EpsilonGreedyPolicy, AlarmedPolicy):
     def __str__(self):
         return f"Safe-$\epsilon$-greedy($\epsilon={self._epsilon}, \omega={self.omega}$)"
 
-    def __init__(self, k, v_ini=None, w=1, d=None, b_0=None, omega=1.0):
-        EpsilonGreedyPolicy.__init__(self, k, v_ini=v_ini, w=w)
+    def __init__(self, k, v_ini=None, w=1, d=None, b_0=None, omega=1.0, eps=0.9):
+        EpsilonGreedyPolicy.__init__(self, k, v_ini=v_ini, w=w, eps=eps)
         AlarmedPolicy.__init__(self, k, d=d, b_0=b_0)
 
     def reset(self):
