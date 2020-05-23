@@ -519,8 +519,8 @@ class AlarmedUCBPolicy(UCBPolicy, AlarmedPolicy):
     def __str__(self):
         return f"Alarmed-UCB($omega={self.omega}$)"
 
-    def __init__(self, k, d=None, b_0=None, omega=1.0):
-        UCBPolicy.__init__(self, k)
+    def __init__(self, k, v_ini=None, w=1, d=None, b_0=None, omega=1.0):
+        UCBPolicy.__init__(self, k, v_ini=v_ini, w=w)
         AlarmedPolicy.__init__(self, k, d=d, b_0=b_0)
 
     def reset(self):
@@ -543,8 +543,8 @@ class AlarmedBernKLUCBPolicy(BernKLUCBPolicy, AlarmedPolicy):
     def __str__(self):
         return f"Safe-KL-UCB($omega={self.omega}$)"
 
-    def __init__(self, k, d=None, b_0=None, omega=1.0):
-        BernKLUCBPolicy.__init__(self, k)
+    def __init__(self, k, v_ini=None, w=1, d=None, b_0=None, omega=1.0):
+        BernKLUCBPolicy.__init__(self, k, v_ini=v_ini, w=w)
         AlarmedPolicy.__init__(self, k, d=d, b_0=b_0)
 
     def reset(self):
@@ -562,13 +562,13 @@ class AlarmedBernKLUCBPolicy(BernKLUCBPolicy, AlarmedPolicy):
         return self.i_last
 
 
-class AlarmedEpsilonGreedy(EpsilonGreedyPolicy, AlarmedPolicy):
+class AlarmedEpsilonGreedyPolicy(EpsilonGreedyPolicy, AlarmedPolicy):
 
     def __str__(self):
         return f"Safe-$\epsilon$-greedy($\epsilon={self._epsilon}, \omega={self.omega}$)"
 
-    def __init__(self, k, d=None, b_0=None, omega=1.0):
-        EpsilonGreedyPolicy.__init__(self, k)
+    def __init__(self, k, v_ini=None, w=1, d=None, b_0=None, omega=1.0):
+        EpsilonGreedyPolicy.__init__(self, k, v_ini=v_ini, w=w)
         AlarmedPolicy.__init__(self, k, d=d, b_0=b_0)
 
     def reset(self):
