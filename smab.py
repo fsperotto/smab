@@ -538,27 +538,27 @@ class AlarmedUCBPolicy(UCBPolicy, AlarmedPolicy):
         return self.i_last
 
 
-class AlarmedBernKLUCBPolicy(KLUCBPolicy, AlarmedPolicy):
+class AlarmedBernKLUCBPolicy(BernKLUCBPolicy, AlarmedPolicy):
 
     def __str__(self):
         return f"Safe-KL-UCB($omega={self.omega}$)"
 
     def __init__(self, k, d=None, b_0=None, omega=1.0):
-        KLUCBPolicy.__init__(self, k)
+        BernKLUCBPolicy.__init__(self, k)
         AlarmedPolicy.__init__(self, k, d=d, b_0=b_0)
 
     def reset(self):
-        KLUCBPolicy.reset(self)
+        BernKLUCBPolicy.reset(self)
         AlarmedPolicy.reset(self)
 
     def _update(self, r):
-        KLUCBPolicy._update(self, r)
+        BernKLUCBPolicy._update(self, r)
         AlarmedPolicy._update(self, r)
 
     def choose(self):
         AlarmedPolicy.choose(self)
         if self.i_last is None:
-            KLUCBPolicy.choose(self)
+            BernKLUCBPolicy.choose(self)
         return self.i_last
 
 
