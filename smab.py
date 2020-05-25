@@ -1,5 +1,5 @@
 #Dependencies
-from typing import TypeVar, Generic
+#from typing import TypeVar, Generic
 import numpy as np
 import numpy.ma as ma
 from numpy.random import binomial, randint, uniform, choice, rand
@@ -21,7 +21,7 @@ import datetime
 #import pickle
 #from google.colab import files
 
-type = TypeVar('T')
+#type = TypeVar('T')
 
 """ partially copied from SMPyBandits"""
 
@@ -1130,22 +1130,55 @@ class SMAB():
     """ 
     Plot a line graph
     """
-    def plot_progression(self, Y, X=None, names=None, linestyles=None, linecolors=None, xlabel="$t$", ylabel="Value", reorder='desc', showlast='legend', title=None, filename=None, show=True):
+    def plot_progression(self, Y, X=None, names=None, linestyles=None, linecolors=None, xlabel="$t$", ylabel=None, reorder='desc', showlast='legend', title=None, filename=None, show=True):
 
         if Y=='precision':
-            Y=self.MF_a[:,self.a_star]
+            X = self.T1
+            Y = self.MF_a[:,self.a_star]
+            if ylabel is None:
+                ylabel = 'precision (averaged over repetitions)'
+        if Y=='sum_reward':
+            X = self.T01
+            Z = np.reshape(np.zeros(self.m, dtype='float'), [self.m, 1])
+            Y = np.block([Z, self.MSR])
+            if ylabel is None:
+                ylabel = 'cumulated reward (averaged over repetitions)'
+        if Y=='budget':
+            X = self.T01
+            Z = np.reshape(np.repeat(self.b_0, self.m), [self.m, 1])
+            Y = np.block([Z, self.MB])
+            if ylabel is None:
+                ylabel = 'budget (averaged over repetitions)'
+        if Y=='survival':
+            X = self.T01
+            Z = np.reshape(np.ones(self.m, dtype='float'), [self.m, 1])
+            Y = np.block([Z, self.SC])
+            if ylabel is None:
+                ylabel = 'survival rate'
+        if Y=='avg_reward':
+            X = self.T1
+            Y = self.MMR
+            if ylabel is None:
+                ylabel = 'mean reward per step (averaged over repetitions)'
+        if Y=='sum_regret':
+            X = self.T1
+            Y = self.MSL
+            if ylabel is None:
+                ylabel = 'cumulated regret (averaged over repetitions)'
+        if Y=='sum_regret':
+            X = self.T1
+            Y = self.MML
+            if ylabel is None:
+                ylabel = 'mean regret per step (averaged over repetitions)'
             
         #number of algorithms
         m = len(Y)
         
         if names is None:
             names=[str(g) for g in self.G]	        
-
-        if X is None:
-            X=self.T1
-            
-        if (names is not None):
+        else:
             names = np.pad(np.array(names[:m]), (0, max(0, m-len(names))), 'wrap')
+            
         if (linestyles is not None):
             linestyles = np.pad(np.array(linestyles[:m]), (0, max(0, m-len(linestyles))), 'wrap') 
         if (linecolors is not None):
@@ -1164,8 +1197,8 @@ class SMAB():
             if linecolors is not None:
                 linecolors = linecolors[idx]
 
-        #if X is None:
-        #    X = range(len(Y[0]))
+        if X is None:
+            X = range(len(Y[0]))
 
         for i, Y_i in enumerate(Y):
             line, = plt.plot(X, Y_i)
