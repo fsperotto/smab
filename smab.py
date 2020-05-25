@@ -1125,3 +1125,77 @@ class SMAB():
             self.NB = NB
             self.SNB = SNB
             self.snb = snb
+
+            
+class smab_plot:
+    
+    """ 
+    Plot a line graph
+    """
+    @staticmethod
+    def plot_progression(self, Y, X=None, names=None, linestyles=None, linecolors=None, xlabel="$t$", ylabel="Value", reorder='desc', showlast='legend', title=None, filename=None, show=True):
+
+        #number of algorithms
+        m = len(Y)
+        
+        if (names is not None):
+            names = np.pad(np.array(names[:m]), (0, max(0, m-len(names))), 'wrap')
+        if (linestyles is not None):
+            linestyles = np.pad(np.array(linestyles[:m]), (0, max(0, m-len(linestyles))), 'wrap') 
+        if (linecolors is not None):
+            linecolors = np.pad(np.array(linecolors[:m]), (0, max(0, m-len(linecolors))), 'wrap') 
+        
+        if Y.ndim > 1:
+
+            #ordering
+            if reorder is not None:
+                idx=np.argsort(Y[:,-1])
+                if reorder == 'desc':
+                    idx = idx[::-1]
+                Y=Y[idx]
+                if names is not None:
+                    names = names[idx]
+                if linestyles is not None:
+                    linestyles = linestyles[idx]
+                if linecolors is not None:
+                    linecolors = linecolors[idx]
+
+            if X is None:
+                X = range(len(Y[0]))
+
+            for i, Y_i in enumerate(Y):
+                line, = plt.plot(X, Y_i)
+                if linestyles is not None:
+                    line.set_linestyle(linestyles[i % len(linestyles)])
+                if linecolors is not None:
+                    line.set_color(linecolors[i % len(linecolors)])
+                if (showlast == 'axis') or (showlast == 'both') or (showlast == True):
+                    plt.annotate('%0.2f'%Y_i[-1], xy=(1, Y_i[-1]), xytext=(8, 0), xycoords=('axes fraction', 'data'), textcoords='offset points')                    
+                if (showlast == 'legend') or (showlast == 'both') or (showlast == True):
+                    names[i] = f'{names[i]} ({round(Y_i[-1],2)})'
+            
+
+        else:
+            if X is None:
+                X = range(len(Y))
+            plt.plot(X, Y)
+
+        if names is not None:
+            plt.legend(names)
+
+        if xlabel is not None:
+            plt.xlabel(xlabel)
+
+        if ylabel is not None:
+            plt.ylabel(ylabel)
+
+        if title is not None:
+            plt.title(title)
+
+        if filename is not None:
+            plt.tight_layout()
+            plt.savefig(filename)
+
+        if show:
+            plt.show()
+    
