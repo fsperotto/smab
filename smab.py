@@ -151,7 +151,7 @@ class RandomPolicy(BasePolicy):
     
     def choose(self):
         # base choice: verify mandatory initial rounds
-        BasePolicy.choose(self)
+        super().choose()
         # otherwise: random choice
         if self.i_last is None:
             # uniform choice among the arms
@@ -269,7 +269,13 @@ class EpsilonGreedyPolicy(EmpiricalMeansPolicy, RandomPolicy):
     
     def __init__(self, k, v_ini=None, w=1, eps=0.9):
         EmpiricalMeansPolicy.__init__(self, k, v_ini=v_ini, w=w)
-        assert 0 <= eps <= 1, "Error: the 'epsilon' parameter for EpsilonGreedy class has to be in [0, 1]."  # DEBUG
+        #assert 0 <= eps <= 1, "Error: the 'epsilon' parameter for EpsilonGreedy class has to be in [0, 1]."  # DEBUG
+        if eps > 1.0:
+            print("SMAB warning: parameter epsilon cannot be greater than 1.0; fixing it to 1.0")
+            eps = 1.0
+        if eps < 0.0:
+            print("SMAB warning: parameter epsilon cannot be negative; fixing it to 0.0")
+            eps = 0.0
         self.eps = eps
 
     #alternative: randomize instant utilities
@@ -288,7 +294,7 @@ class EpsilonGreedyPolicy(EmpiricalMeansPolicy, RandomPolicy):
         BasePolicy.choose(self)
         # otherwise:
         if self.i_last is None:
-          if p < self.eps: # Proba epsilon : explore
+          if eps < self.eps: # Proba epsilon : explore
             RandomPolicy.choose(self)
           else:  # Proba 1 - epsilon : exploit
             EmpiricalMeansPolicy.choose(self)
