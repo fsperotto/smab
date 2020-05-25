@@ -318,12 +318,12 @@ class SoftMaxPolicy(EmpiricalMeansPolicy):
     
     def __init__(self, k, v_ini=None, w=1, eta=None):
         super().__init__(k, v_ini=v_ini, w=w)
-        if eta is None:  # Use a default value for the temperature
-            eta = np.sqrt(np.log(k) / k)
         #assert eta > 0, "Error: the temperature parameter for Softmax class has to be > 0."
         if eta <= 0.0:
-            print("SMAB warning: the temperature parameter for Softmax has to be positive; setting it to 1.")
-            eta = 1.0
+            print("SMAB warning: the temperature parameter for Softmax has to be positive; setting it to default.")
+            eta = None
+        if eta is None:  # Use a default value for the temperature
+            eta = np.sqrt(np.log(k) / k)
         self.eta = eta
 
     def _evaluate(self):
@@ -341,14 +341,14 @@ class SoftMaxPolicy(EmpiricalMeansPolicy):
 
     def choose(self):
         """random selection with softmax probabilities, thank to :func:`numpy.random.choice`."""
-        if ( (self.w > 0) and (self.t < (self.k * self.w)) ):
-          # play each arm w times, in order
-          self.i_last = self.t % self.k
-        else:
+        # base choice: verify mandatory initial rounds
+        BasePolicy.choose(self)
+        # otherwise:
+        if self.i_last is None:
           # pondered choice among the arms based on their normalize v_i
           s = np.sum(self.v_i)
           if s > 0:
-            self.i_last = choice(self.k, p=(self.v_i/s))
+            self.i_last = choice(self.k, p=(np.array(self.v_i/s,dtype='float64')))
           else:
             self.i_last = randint(self.k)
         return self.i_last
