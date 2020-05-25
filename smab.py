@@ -312,7 +312,7 @@ class SoftMaxPolicy(EmpiricalMeansPolicy):
             eta = np.sqrt(np.log(k) / k)
         #assert eta > 0, "Error: the temperature parameter for Softmax class has to be > 0."
         if eta <= 0.0:
-            print("SMAB warning: the temperature parameter for Softmax has to be positive; setting to 1"
+            print("SMAB warning: the temperature parameter for Softmax has to be positive; setting it to 1.")
             eta = 1.0
         if eta is None:
             eta = 1.0
