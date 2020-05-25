@@ -1132,6 +1132,9 @@ class SMAB():
     """
     def plot_progression(self, Y, X=None, names=None, linestyles=None, linecolors=None, xlabel="$t$", ylabel="Value", reorder='desc', showlast='legend', title=None, filename=None, show=True):
 
+        if Y=='precision':
+            Y=self.MF_a[:,self.a_star]
+            
         #number of algorithms
         m = len(Y)
         
