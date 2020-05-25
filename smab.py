@@ -294,9 +294,13 @@ class EpsilonGreedyPolicy(EmpiricalMeansPolicy, RandomPolicy):
         BasePolicy.choose(self)
         # otherwise:
         if self.i_last is None:
-          if eps < self.eps: # Proba epsilon : explore
+          # Generate random number
+          rnd_t = rand()
+          # Proba epsilon : explore
+          if rnd_t < self.eps: 
             RandomPolicy.choose(self)
-          else:  # Proba 1 - epsilon : exploit
+          # Proba 1 - epsilon : exploit
+          else:
             EmpiricalMeansPolicy.choose(self)
         return self.i_last
 
