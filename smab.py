@@ -623,7 +623,7 @@ class AlarmedBernKLUCBPolicy(BernKLUCBPolicy, Budgeted):
 class AlarmedEpsilonGreedyPolicy(EpsilonGreedyPolicy, Budgeted):
 
     def __str__(self):
-        return f"Safe-$\epsilon$-greedy($\epsilon={self._epsilon}, \omega={self.omega}$)"
+        return f"Safe-$\epsilon$-greedy($\epsilon={self.eps}, \omega={self.omega}$)"
 
     def __init__(self, k, v_ini=None, w=1, d=None, b_0=None, omega=1.0, eps=0.9):
         EpsilonGreedyPolicy.__init__(self, k, v_ini=v_ini, w=w, eps=eps)
@@ -657,6 +657,9 @@ class AlarmedEpsilonGreedyPolicy(EpsilonGreedyPolicy, Budgeted):
 
 class BanditGamblerPolicy(EmpiricalMeansPolicy, Budgeted):
 
+    def __str__(self):
+        return f"Bandit Gambler"
+
     def __init__(self, k, v_ini=None, w=1, d=None, b_0=None):
         #super().__init__(k, v_ini=v_ini, w=w, d=d, b_0=b_0)
         EmpiricalMeansPolicy.__init__(self, k, v_ini=v_ini, w=w)
@@ -687,6 +690,9 @@ class BanditGamblerPolicy(EmpiricalMeansPolicy, Budgeted):
 ################################################################################
 
 class BanditGamblerUCBPolicy(BanditGamblerPolicy):
+
+    def __str__(self):
+        return f"Bandit Gambler UCB"
 
     def ruin_estimated_prob(self, i):
         n_i = self.n_i[i]
@@ -1113,7 +1119,7 @@ class SMAB():
                 ylabel = 'cumulated regret (averaged over repetitions)'
             if title is None:
                 title="Cumulated Regret"
-        elif Y=='sum_regret':
+        elif Y=='avg_regret':
             X = self.T1
             Y = self.MML
             if ylabel is None:
