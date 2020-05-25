@@ -1,6 +1,7 @@
 #Dependencies
 from typing import TypeVar, Generic
 import numpy as np
+import numpy.ma as ma
 from numpy.random import binomial, randint, uniform, choice, rand
 from math import sqrt, log
 from scipy.stats import beta
@@ -915,13 +916,14 @@ class SMAB():
             self.MFW_a = np.mean(FW_a, axis=0)		
 
         #final arm pull count (int 3d matrix [j x i x a])
-        n_a = N_a[:,:,:,self.h-1]
+        #n_a = N_a[:,:,:,self.h-1]
+        n_a = N_a[:,:,:,-1]
 
         #averaged final arm pull count (float 2d matrix [j x a]) #averaged over repetitions
         self.mn_a = np.mean(n_a, axis=0)
 
         #final arm pull frequency (float 3d matrix [j x i x a])
-        f_a = F_a[:,:,:,self.h-1]
+        f_a = F_a[:,:,:,-1]
 
         #averaged final arm pull frequency (float 2d matrix [j x a]) #averaged over repetitions
         self.mf_a = np.mean(f_a, axis=0)
@@ -933,7 +935,7 @@ class SMAB():
         self.MSR = np.mean(SR, axis=0)
 
         #final rewards (float 2d matrix [j x i])
-        sr = SR[:,:,self.h-1]
+        sr = SR[:,:,-1]
 
         #averaged final rewards (float 1d matrix [j]) #averaged over repetitions
         self.msr = np.mean(sr, axis=0)
@@ -964,7 +966,7 @@ class SMAB():
         self.MSL = np.mean(SL, axis=0)
 
         #final cumulated regret (float 2d matrix [j x i])
-        sl = SL[:,:,self.h-1]
+        sl = SL[:,:,-1]
 
         #averaged final cumulated regret (float 1d matrix [j]) #averaged over repetitions
         self.msl = np.mean(sl, axis=0)
@@ -984,13 +986,13 @@ class SMAB():
         self.MSR_a = np.mean(SR_a, axis=0)
 
         #final rewards per action (float 3d matrix [j x i x a])
-        sr_a = SR_a[:,:,:,self.h-1]
+        sr_a = SR_a[:,:,:,-1]
 
         #averaged final rewards per action (float 2d matrix [j x a]) #averaged over repetitions
         self.msr_a = np.mean(sr_a, axis=0)
 
         #reward proportion per action (float 3d matrix [j x i x a])
-        fr_a = sr_a / SR[:,:,self.h-1,np.newaxis]
+        fr_a = sr_a / SR[:,:,-1,np.newaxis]
 
         #averaged proportion per action (float 2d matrix [j x a]) #averaged over repetitions
         self.mfr_a = np.mean(fr_a, axis=0)
@@ -1008,13 +1010,14 @@ class SMAB():
         self.MB = self.MSR + self.b_0
 
         #final budget (float 2d matrix [j x i])
-        b = B[:,:,self.h-1]
+        b = B[:,:,-1]
 
         #averaged final budget (float 1d matrix [j]) #averaged over repetitions
         self.mb = np.mean(b, axis=0)
 
-        #time map on negative budget (int 3d matrix [t x j x i])
-        TNB = np.array([[[1 if(v<=0) else 0 for v in B_ij] for B_ij in B_i] for B_i in B])
+        #time map on non-positive budget (int 3d matrix [t x j x i])
+        #TNB = np.array([[[1 if(v<=0) else 0 for v in B_ij] for B_ij in B_i] for B_i in B])
+        TNB = (B <= 0).astype(int)
         
         #time dead map (int 3d matrix [t x j x i])
         TD = np.maximum.accumulate(TNB, axis=2)
@@ -1022,10 +1025,25 @@ class SMAB():
         #progressive survival counter of episodes (float 3d matrix [t x j])
         self.SC = 1 - np.mean(TD, axis=0)
         #final survival counter
-        self.sc = self.SC[:,self.h-1]
+        self.sc = self.SC[:,-1]
         #final survival rate
         self.rsc = self.sc / self.n
-         
+
+        
+        #progressive budget considering ruin (float 3d matrix [t x j x i])
+        # i.e. the progressive cumulative rewards plus initial budget
+        #masked_B = ma.masked_less_equal(B, 0.0)
+        RB = ma.masked_less_equal(B, 0.0).filled(0.0)
+
+        #averaged progressive budget considering ruin (float 2d matrix [t x j]) #averaged over repetitions
+        self.MRB = np.mean(RB, axis=0)
+
+        #final budget (float 2d matrix [j x i])
+        rb = RB[:,:,-1]
+
+        #averaged final budget (float 1d matrix [j]) #averaged over repetitions
+        self.mrb = np.mean(rb, axis=0)
+        
         ##time map of the averaged budget on negative (int 2d matrix [t x j])
         #self.TNMB = np.array([[1 if(v<0) else 0 for v in MB_j] for MB_j in self.MB])
 
