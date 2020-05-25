@@ -39,7 +39,7 @@ class mabplt:
     """ 
     Plot a line graph
     """
-    def _plot_progression(self, Y, X=None, names=None, linestyles=None, linecolors=None, xlabel="$t$", ylabel="Value", reorder='desc', showlast=False, title=None, filename=None, show=True):
+    def _plot_progression(self, Y, X=None, names=None, linestyles=None, linecolors=None, xlabel="$t$", ylabel="Value", reorder='desc', showlast=True, title=None, filename=None, show=True):
 
         #number of algorithms
         m = len(Y)
