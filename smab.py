@@ -151,7 +151,7 @@ class RandomPolicy(BasePolicy):
     
     def choose(self):
         # base choice: verify mandatory initial rounds
-        super.choose()
+        super().choose()
         # otherwise: random choice
         if self.i_last is None:
             # uniform choice among the arms
@@ -313,8 +313,6 @@ class SoftMaxPolicy(EmpiricalMeansPolicy):
         #assert eta > 0, "Error: the temperature parameter for Softmax class has to be > 0."
         if eta <= 0.0:
             print("SMAB warning: the temperature parameter for Softmax has to be positive; setting it to 1.")
-            eta = 1.0
-        if eta is None:
             eta = 1.0
         self.eta = eta
 
