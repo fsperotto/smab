@@ -625,21 +625,21 @@ class AlarmedPolicy(Budgeted, Estimator):
 #####################################################
 
 
-class AlarmedUCBPolicy(UCBPolicy, AlarmedPolicy):
+class AlarmedUCBPolicy(UCB1Policy, AlarmedPolicy):
 
     def __str__(self):
         return f"Alarmed-UCB($omega={self.omega}$)"
 
     def __init__(self, k, v_ini=None, w=1, d=None, b_0=None, omega=1.0):
-        UCBPolicy.__init__(self, k, v_ini=v_ini, w=w)
+        UCB1Policy.__init__(self, k, v_ini=v_ini, w=w)
         AlarmedPolicy.__init__(self, k, d=d, b_0=b_0)
 
     def reset(self):
-        UCBPolicy.reset(self)
+        UCB1Policy.reset(self)
         AlarmedPolicy.reset(self)
 
     def _update(self, r):
-        UCBPolicy._update(self, r)
+        UCB1Policy._update(self, r)
         AlarmedPolicy._update(self, r)
 
     def choose(self):
@@ -649,7 +649,7 @@ class AlarmedUCBPolicy(UCBPolicy, AlarmedPolicy):
         else:
           AlarmedPolicy.choose(self)
           if self.i_last is None:
-            UCBPolicy.choose(self)
+            UCB1Policy.choose(self)
         return self.i_last
 
 
