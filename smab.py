@@ -1131,7 +1131,7 @@ class SMAB():
         m = len(Y)
         
         if names is None:
-            names=[str(g) for g in self.G]	        
+            names = np.array([str(g) for g in self.G]) 
         else:
             names = np.pad(np.array(names[:m]), (0, max(0, m-len(names))), 'wrap')
             
@@ -1146,8 +1146,7 @@ class SMAB():
             if reorder == 'desc':
                 idx = idx[::-1]
             Y=Y[idx]
-            if names is not None:
-                names = names[idx]
+            names = names[idx]
             if linestyles is not None:
                 linestyles = linestyles[idx]
             if linecolors is not None:
@@ -1167,8 +1166,7 @@ class SMAB():
             if (showlast == 'legend') or (showlast == 'both') or (showlast == True):
                 names[i] = f'{names[i]} ({round(Y_i[-1],2)})'
             
-        if names is not None:
-            plt.legend(names)
+        plt.legend(names)
 
         if xlabel is not None:
             plt.xlabel(xlabel)
