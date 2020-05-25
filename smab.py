@@ -1130,8 +1130,10 @@ class SMAB():
     """ 
     Plot a line graph
     """
-    def plot_progression(self, Y, X=None, names=None, linestyles=None, linecolors=None, xlabel="$t$", ylabel=None, reorder='desc', showlast='legend', title=None, filename=None, show=True):
+    def plot_progression(self, Y, X=None, names=None, linestyles=None, linecolors=None, xlabel="$t$", ylabel=None, reorder='desc', showlast='legend', title=None, filename=None, figsize=(12,8), show=True):
 
+        fig = plt.figure(figsize=(12,8))
+        
         if Y=='precision':
             X = self.T1
             Y = self.MF_a[:,self.a_star]
@@ -1139,7 +1141,7 @@ class SMAB():
                 ylabel = 'precision (averaged over repetitions)'
             if title is None:
                 title="Precision"
-        if Y=='sum_reward':
+        elif Y=='sum_reward':
             X = self.T01
             Z = np.reshape(np.zeros(self.m, dtype='float'), [self.m, 1])
             Y = np.block([Z, self.MSR])
@@ -1147,7 +1149,7 @@ class SMAB():
                 ylabel = 'cumulated reward (averaged over repetitions)'
             if title is None:
                 title="Cumulated Reward"
-        if Y=='budget':
+        elif Y=='budget':
             X = self.T01
             Z = np.reshape(np.repeat(self.b_0, self.m), [self.m, 1])
             Y = np.block([Z, self.MB])
@@ -1155,7 +1157,7 @@ class SMAB():
                 ylabel = 'budget (averaged over repetitions)'
             if title is None:
                 title="Budget"
-        if Y=='survival':
+        elif Y=='survival':
             X = self.T01
             Z = np.reshape(np.ones(self.m, dtype='float'), [self.m, 1])
             Y = np.block([Z, self.SC])
@@ -1163,21 +1165,21 @@ class SMAB():
                 ylabel = 'survival rate'
             if title is None:
                 title="Survival Rate"
-        if Y=='avg_reward':
+        elif Y=='avg_reward':
             X = self.T1
             Y = self.MMR
             if ylabel is None:
                 ylabel = 'mean reward per step (averaged over repetitions)'
             if title is None:
                 title="Mean Reward"
-        if Y=='sum_regret':
+        elif Y=='sum_regret':
             X = self.T1
             Y = self.MSL
             if ylabel is None:
                 ylabel = 'cumulated regret (averaged over repetitions)'
             if title is None:
                 title="Cumulated Regret"
-        if Y=='sum_regret':
+        elif Y=='sum_regret':
             X = self.T1
             Y = self.MML
             if ylabel is None:
