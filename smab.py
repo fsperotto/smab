@@ -122,8 +122,8 @@ class BasePolicy():
           # play each arm w times, in order
           self.i_last = self.t % self.k
         else:
-          # uniform choice among the arms
-          self.i_last = randint(self.k)
+          # otherwise: undefined
+          self.i_last = None
         return self.i_last
 
     def observe(self, r):
@@ -151,7 +151,7 @@ class RandomPolicy(BasePolicy):
     
     def choose(self):
         # base choice: verify mandatory initial rounds
-        super().choose()
+        BasePolicy.choose(self)
         # otherwise: random choice
         if self.i_last is None:
             # uniform choice among the arms
