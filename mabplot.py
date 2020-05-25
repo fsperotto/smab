@@ -39,13 +39,13 @@ class mabplt:
     """ 
     Plot a line graph
     """
-    def _plot_progression(self, Y, X=None, names=None, linestyles=None, linecolors=None, xlabel="$t$", ylabel="Value", reorder='desc', showlast=True, title=None, filename=None, show=True):
+    def _plot_progression(self, Y, X=None, names=None, linestyles=None, linecolors=None, xlabel="$t$", ylabel="Value", reorder='desc', showlast='legend', title=None, filename=None, show=True):
 
         #number of algorithms
         m = len(Y)
         
         if (names is not None):
-            names = np.pad(np.array(names[:m]), (0, max(0, m-len(names))), 'wrap') 
+            names = np.pad(np.array(names[:m]), (0, max(0, m-len(names))), 'wrap')
         if (linestyles is not None):
             linestyles = np.pad(np.array(linestyles[:m]), (0, max(0, m-len(linestyles))), 'wrap') 
         if (linecolors is not None):
@@ -75,8 +75,11 @@ class mabplt:
                     line.set_linestyle(linestyles[i % len(linestyles)])
                 if linecolors is not None:
                     line.set_color(linecolors[i % len(linecolors)])
-                if showlast:
+                if (showlast == 'axis') or (showlast == 'both') or (showlast == True):
                     plt.annotate('%0.2f'%Y_i[-1], xy=(1, Y_i[-1]), xytext=(8, 0), xycoords=('axes fraction', 'data'), textcoords='offset points')                    
+                if (showlast == 'legend') or (showlast == 'both') or (showlast == True):
+                    names[i] = f'{names[i]} ({round(Y_i[-1],2)})'
+            
 
         else:
             if X is None:
