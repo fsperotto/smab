@@ -259,7 +259,7 @@ EmpiricalMeansPolicy = IndexPolicy
 
 ################################################################################
 
-class EpsilonGreedyPolicy(BasePolicy, RandomPolicy, EmpiricalMeansPolicy):
+class EpsilonGreedyPolicy(EmpiricalMeansPolicy, RandomPolicy):
     r""" The epsilon-greedy random policy.
     - At every time step, a fully uniform random exploration has probability :math:`\varepsilon(t)` to happen, otherwise an exploitation is done.
     """
