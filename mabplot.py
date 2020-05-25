@@ -44,8 +44,8 @@ class mabplt:
         #number of algorithms
         m = len(Y)
         
-        if (names is not None):
-            names = np.pad(np.array(names[:m]), (0, max(0, m-len(names))), 'wrap')
+        #if (names is not None):
+        #    names = np.pad(np.array(names[:m]), (0, max(0, m-len(names))), 'wrap')
         if (linestyles is not None):
             linestyles = np.pad(np.array(linestyles[:m]), (0, max(0, m-len(linestyles))), 'wrap') 
         if (linecolors is not None):
