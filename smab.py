@@ -1,4 +1,5 @@
 #Dependencies
+from typing import TypeVar, Generic
 import numpy as np
 from numpy.random import binomial, randint, uniform, choice, rand
 from math import sqrt, log
@@ -18,6 +19,8 @@ import datetime
 #%matplotlib notebook
 #import pickle
 #from google.colab import files
+
+type = TypeVar('T')
 
 """ partially copied from SMPyBandits"""
 
@@ -532,8 +535,12 @@ class AlarmedUCBPolicy(UCBPolicy, AlarmedPolicy):
         AlarmedPolicy._update(self, r)
 
     def choose(self):
-        AlarmedPolicy.choose(self)
-        if self.i_last is None:
+        if ( (self.w > 0) and (self.t < (self.k * self.w)) ):
+          # play each arm w times, in order
+          self.i_last = self.t % self.k
+        else:
+          AlarmedPolicy.choose(self)
+          if self.i_last is None:
             UCBPolicy.choose(self)
         return self.i_last
 
@@ -556,8 +563,12 @@ class AlarmedBernKLUCBPolicy(BernKLUCBPolicy, AlarmedPolicy):
         AlarmedPolicy._update(self, r)
 
     def choose(self):
-        AlarmedPolicy.choose(self)
-        if self.i_last is None:
+        if ( (self.w > 0) and (self.t < (self.k * self.w)) ):
+          # play each arm w times, in order
+          self.i_last = self.t % self.k
+        else:
+          AlarmedPolicy.choose(self)
+          if self.i_last is None:
             BernKLUCBPolicy.choose(self)
         return self.i_last
 
@@ -580,8 +591,12 @@ class AlarmedEpsilonGreedyPolicy(EpsilonGreedyPolicy, AlarmedPolicy):
         AlarmedPolicy._update(self, r)
 
     def choose(self):
-        AlarmedPolicy.choose(self)
-        if self.i_last is None:
+        if ( (self.w > 0) and (self.t < (self.k * self.w)) ):
+          # play each arm w times, in order
+          self.i_last = self.t % self.k
+        else:
+          AlarmedPolicy.choose(self)
+          if self.i_last is None:
             EpsilonGreedyPolicy.choose(self)
         return self.i_last
 
