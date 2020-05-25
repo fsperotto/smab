@@ -319,7 +319,7 @@ class SoftMaxPolicy(EmpiricalMeansPolicy):
     def __init__(self, k, v_ini=None, w=1, eta=None):
         super().__init__(k, v_ini=v_ini, w=w)
         #assert eta > 0, "Error: the temperature parameter for Softmax class has to be > 0."
-        if eta <= 0.0:
+        if (eta is not None) and (eta <= 0.0):
             print("SMAB warning: the temperature parameter for Softmax has to be positive; setting it to default.")
             eta = None
         if eta is None:  # Use a default value for the temperature
