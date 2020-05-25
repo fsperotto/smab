@@ -659,7 +659,7 @@ class BanditGamblerPolicy(EmpiricalMeansPolicy, Budgeted):
 
     def __init__(self, k, v_ini=None, w=1, d=None, b_0=None):
         #super().__init__(k, v_ini=v_ini, w=w, d=d, b_0=b_0)
-        IndexPolicy.__init__(self, k, v_ini=v_ini, w=w)
+        EmpiricalMeansPolicy.__init__(self, k, v_ini=v_ini, w=w)
         Budgeted.__init__(self, k, d=d, b_0=b_0)
 
     #@jit
@@ -672,12 +672,12 @@ class BanditGamblerPolicy(EmpiricalMeansPolicy, Budgeted):
 
     def reset(self):
         #super().reset()
-        IndexPolicy.reset(self)
+        EmpiricalMeansPolicy.reset(self)
         Budgeted.reset(self)
 
     def _update(self, r):
         #super()._update(r)
-        IndexPolicy._update(self, r)
+        EmpiricalMeansPolicy._update(self, r)
         Budgeted._update(self, r)
 
     def _evaluate(self):
