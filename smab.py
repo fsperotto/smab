@@ -26,12 +26,18 @@ type = TypeVar('T')
 
 class Domain():
 
+    def __str__(self):
+        return f"Domain ($r_min={self.r_min}, r_max={self.r_max}$)"
+
     def __init__(self, r_min=0.0, r_max=1.0):
         """ class for reward domain. 
             Arms always return values into the interval [0, 1].
             For budgeted problems, the domain is used for redimensioning r
         """
-        assert r_max >= r_min, "Error, the maximal reward must be greater than the minimal."  # DEBUG
+        #assert r_max >= r_min, "Error, the maximal reward must be greater than the minimal."  # DEBUG
+        if r_max < r_min:
+            print("SMAB warning: the maximal reward must be greater than the minimal; they were swaped.")
+            r_max, rmin = r_min, r_max
         self.r_min = r_min  #: Lower values for rewards
         self.r_max = r_max  #: Higher values for rewards
         self.r_amp = r_max - r_min  #: Larger values for rewards
@@ -43,6 +49,8 @@ class RandomArm():
     """ Base class for an arm class.
         return uniformly distributed random values between 0 and 1
     """
+    def __str__(self):
+        return f"Random Arm"
 
     def __init__(self):
         """ Base class for an arm class."""
@@ -57,10 +65,19 @@ class RandomArm():
 class BernoulliArm(RandomArm):
     """ Bernoulli distributed arm."""
 
+    def __str__(self):
+        return f"Bernoulli Arm ($p={self.p}$)"
+    
     def __init__(self, p):
         """New arm."""
-        super()
-        assert 0.0 <= p <= 1.0, "Error, the parameter probability for Bernoulli class has to be in [0, 1]."  # DEBUG
+        super().__init__()
+        #assert 0.0 <= p <= 1.0, "Error, the parameter probability for Bernoulli class has to be in [0, 1]."  # DEBUG
+        if p > 1.0:
+            print("SMAB warning: parameter p cannot be greater than 1.0; fixing it to 1.0")
+            p = 1.0
+        if p < 0.0:
+            print("SMAB warning: parameter p cannot be negative; fixing it to 0.0")
+            p = 0.0
         self.p = p  #: Parameter p for this Bernoulli arm
         self.mean = p
 
@@ -72,16 +89,23 @@ class BernoulliArm(RandomArm):
 ################################################################################
 
 class BasePolicy():
-    """ Base class for any policy.
-        by default, choose an arm uniformly at random
-    """
+    """ Base class for any policy. """
 
-    def __init__(self, k, w=0):
+    def __str__(self):
+        return f"Base Policy ($k={self.k}, w={self.w}$)"
+    
+    def __init__(self, k, w=1):
         """ New policy."""
         # Parameters
-        assert k > 0, "Error, the number of arms must be a positive integer."  # DEBUG
-        self.k = k  #: Number of Arms
-        self.w = w   #: if w>0, each arm must be played at least w times on the beginning (initial trials)
+        #assert k > 0, "Error, the number of arms must be a positive integer."  # DEBUG
+        if k < 1:
+            print("SMAB warning: parameter k must be a positive integer; fixing it to 2")
+            k = 2
+        if k < 0:
+            print("SMAB warning: parameter w cannot be negative; fixing it to 0")
+            w = 0
+        self.k = int(k)  #: Number of Arms
+        self.w = int(w)  #: if w>0, each arm must be played at least w times on the beginning (initial trials)
         # Internal state
         self.t = 0  #: Internal time-step
         self.n_i = np.zeros(self.k, dtype=int)  #: Number of pulls of each arm
@@ -94,7 +118,6 @@ class BasePolicy():
         self.i_last = 0
 
     def choose(self):
-        """ choose an arm uniformly at random """
         if ( (self.w > 0) and (self.t < (self.k * self.w)) ):
           # play each arm w times, in order
           self.i_last = self.t % self.k
@@ -120,8 +143,51 @@ class BasePolicy():
 
 ################################################################################
 
-RandomPolicy = BasePolicy
+class RandomPolicy(BasePolicy):
+    """ Choose an arm uniformly at random. """
 
+    def __str__(self):
+        return f"Random Policy ($k={self.k}, w={self.w}$)"
+    
+    def choose(self):
+        # base choice: verify mandatory initial rounds
+        super.choose()
+        # otherwise: random choice
+        if self.i_last is None:
+            # uniform choice among the arms
+            self.i_last = randint(self.k)
+        return self.i_last
+        
+    
+################################################################################
+
+class FixedPolicy(BasePolicy):
+    """ Choose always the same arm. """
+
+    def __str__(self):
+        return f"Fixed Policy ($k={self.k}, w={self.w}, i={self.fixed_i}$)"
+    
+    def __init__(self, k, w=1, fixed_i=None):
+        """ New fixed policy."""
+        # Parameters
+        super().__init__(k, w)
+        if (fixed_i is None):
+            #choose the fixed policy at random
+            self.fixed_i = randint(self.k)
+        else:
+            #the fixed policy is given
+            self.fixed_i = fixed_i
+            
+    def choose(self):
+        # base choice: verify mandatory initial rounds
+        super().choose()
+        # otherwise: random choice
+        if self.i_last is None:
+            # fixed choice
+            self.i_last = self.fixed_i
+        return self.i_last
+        
+    
 ################################################################################
 
 class IndexPolicy(BasePolicy):
@@ -131,9 +197,12 @@ class IndexPolicy(BasePolicy):
         Note that it is equal to UCBalpha with alpha=0, only quicker.
     """
 
+    def __str__(self):
+        return f"Empirical Means ($k={self.k}, w={self.w}$)"
+    
     def __init__(self, k, v_ini=None, w=1):
         """ New generic index policy. """
-        super().__init__(k, w=w)
+        super().__init__(k, w)
         self.s_i = np.full(k, 0.0)  #: cumulated rewards for each arm
         self.v_ini = v_ini  if  (v_ini is not None)  else  0.0   #: initial value (index or utility) for the arms
         self.v_i = np.full(k, v_ini)  #: value (index or utility) for each arm
@@ -151,10 +220,10 @@ class IndexPolicy(BasePolicy):
         .. math:: A(t) \sim U(\arg\max_{1 \leq k \leq K} I_k(t)).
         .. note:: In almost all cases, there is a unique arm with maximal index, so we loose a lot of time with this generic code, but I couldn't find a way to be more efficient without loosing generality.
         """
-        if ( (self.w > 0) and (self.t < (self.k * self.w)) ):
-          # play each arm w times, in order
-          self.i_last = self.t % self.k
-        else:
+        # base choice: verify mandatory initial rounds
+        super().choose()
+        # otherwise: index choice
+        if self.i_last is None:
           # Uniform choice among the best arms
           self.i_last = choice(self.bests)
         return self.i_last
@@ -190,24 +259,40 @@ EmpiricalMeansPolicy = IndexPolicy
 
 ################################################################################
 
-class EpsilonGreedyPolicy(EmpiricalMeansPolicy):
+class EpsilonGreedyPolicy(BasePolicy, RandomPolicy, EmpiricalMeansPolicy):
     r""" The epsilon-greedy random policy.
     - At every time step, a fully uniform random exploration has probability :math:`\varepsilon(t)` to happen, otherwise an exploitation is done.
     """
 
+    def __str__(self):
+        return f"Epsilon-Greedy ($k={self.k}, w={self.w}, eps={self.eps}$)"
+    
     def __init__(self, k, v_ini=None, w=1, eps=0.9):
-        super().__init__(k, v_ini=v_ini, w=w)
+        EmpiricalMeansPolicy.__init__(self, k, v_ini=v_ini, w=w)
         assert 0 <= eps <= 1, "Error: the 'epsilon' parameter for EpsilonGreedy class has to be in [0, 1]."  # DEBUG
         self.eps = eps
 
-    def _calc_bests(self):
-        # Generate random number
-        p = rand()
+    #alternative: randomize instant utilities
+    #def _calc_bests(self):
+    #    # Generate random number
+    #    p = rand()
+    #    """With a probability of epsilon, explore (uniform choice), otherwise exploit based on empirical mean rewards."""
+    #    if p < self.eps: # Proba epsilon : explore
+    #        return np.array([randint(self.k)])
+    #    else:  # Proba 1 - epsilon : exploit
+    #        return super()._calc_bests()
+
+    def choose(self):
         """With a probability of epsilon, explore (uniform choice), otherwise exploit based on empirical mean rewards."""
-        if p < self.eps: # Proba epsilon : explore
-            return np.array([randint(self.k)])
-        else:  # Proba 1 - epsilon : exploit
-            return super()._calc_bests()
+        # base choice: verify mandatory initial rounds
+        BasePolicy.choose(self)
+        # otherwise:
+        if self.i_last is None:
+          if p < self.eps: # Proba epsilon : explore
+            RandomPolicy.choose(self)
+          else:  # Proba 1 - epsilon : exploit
+            EmpiricalMeansPolicy.choose(self)
+        return self.i_last
 
 ################################################################################
         
@@ -218,11 +303,19 @@ class SoftMaxPolicy(EmpiricalMeansPolicy):
       Reference: [Regret Analysis of Stochastic and Nonstochastic Multi-armed Bandit Problems, S.Bubeck & N.Cesa-Bianchi, §3.1](http://sbubeck.com/SurveyBCB12.pdf)
     """
 
+    def __str__(self):
+        return f"SoftMax ($k={self.k}, w={self.w}, eta={self.eta}$)"
+    
     def __init__(self, k, v_ini=None, w=1, eta=None):
         super().__init__(k, v_ini=v_ini, w=w)
         if eta is None:  # Use a default value for the temperature
             eta = np.sqrt(np.log(k) / k)
-        assert eta > 0, "Error: the temperature parameter for Softmax class has to be > 0."
+        #assert eta > 0, "Error: the temperature parameter for Softmax class has to be > 0."
+        if eta <= 0.0:
+            print("SMAB warning: the temperature parameter for Softmax has to be positive; setting to 1"
+            eta = 1.0
+        if eta is None:
+            eta = 1.0
         self.eta = eta
 
     def _evaluate(self):
@@ -254,11 +347,11 @@ class SoftMaxPolicy(EmpiricalMeansPolicy):
 
 ################################################################################
 
-class UCBPolicy(IndexPolicy):
+class UCB1Policy(IndexPolicy):
 
-    def __init__(self, k, v_ini=None, w=1):
-        super().__init__(k, v_ini=v_ini, w=w)
-
+    def __str__(self):
+        return f"UCB1 ($k={self.k}, w={self.w}$)"
+                  
     def _evaluate(self):
         r""" Compute the current index, at time t and after :math:`N_k(t)` pulls of arm k:
         .. math:: I_k(t) = \frac{X_k(t)}{N_k(t)} + \sqrt{\frac{2 \log(t)}{N_k(t)}}.
@@ -278,9 +371,9 @@ class UCBPolicy(IndexPolicy):
 
 class BernKLUCBPolicy(IndexPolicy):
 
-    def __init__(self, k, v_ini=None, w=1):
-        super().__init__(k, v_ini=v_ini, w=w)
-
+    def __str__(self):
+        return f"Bernoulli KL-UCB ($k={self.k}, w={self.w}$)"
+                  
     @jit
     def _klBern(self, x, y):
         r""" Kullback-Leibler divergence for Bernoulli distributions.
@@ -363,9 +456,9 @@ class ThompsonPolicy(IndexPolicy):
     - Reference: [Thompson - Biometrika, 1933].
     """
 
-    def __init__(self, k, v_ini=None, w=1):
-        super().__init__(k, v_ini=v_ini, w=w)
-
+    def __str__(self):
+        return f"Thompson (Beta) Sampling ($k={self.k}, w={self.w}$)"
+                  
     def _evaluate(self):
         r""" Compute the current index, at time t and after :math:`N_k(t)` pulls of arm k, giving :math:`S_k(t)` rewards of 1, by sampling from the Beta posterior:
         .. math::
@@ -385,10 +478,10 @@ class BayesUCBPolicy(IndexPolicy):
     - By default, it uses a Beta posterior (:class:`Policies.Posterior.Beta`), one by arm.
     -Reference: [Kaufmann, Cappé & Garivier - AISTATS, 2012].
     """
-    
-    def __init__(self, k, v_ini=None, w=1):
-        super().__init__(k, v_ini=v_ini, w=w)
 
+    def __str__(self):
+        return f"Bayes (Beta) UCB ($k={self.k}, w={self.w}$)"
+                  
     def _evaluate(self):
         r""" Compute the current index, at time t and after :math:`N_k(t)` pulls of arm k, giving :math:`S_k(t)` rewards of 1, by taking the :math:`1 - \frac{1}{t}` quantile from the Beta posterior:
         .. math:: I_k(t) = \mathrm{Quantile}\left(\mathrm{Beta}(1 + S_k(t), 1 + N_k(t) - S_k(t)), 1 - \frac{1}{t}\right).
@@ -404,7 +497,10 @@ class BayesUCBPolicy(IndexPolicy):
 
 # class for the marab algorithm
 class MaRaBPolicy(IndexPolicy):
-    
+
+    def __str__(self):
+        return f"Empirical MaRaB ($k={self.k}, w={self.w}, alpha={self.alpha} $)"
+                  
     def __init__(self, k, v_ini=None, w=1, alpha=0.05, c=1e-6):
         super().__init__(k, v_ini=v_ini, w=w)
         self.alpha = alpha
@@ -433,6 +529,9 @@ class MaRaBPolicy(IndexPolicy):
 
 class Budgeted:
 
+    def __str__(self):
+        return f"Budgeted ($k={self.k}, b_0={self.b_0}$)"
+                  
     def __init__(self, k, d=None, b_0=None):
         if b_0 is None:
             b_0 = k
@@ -453,6 +552,9 @@ class Budgeted:
 
 class Estimator:
 
+    def __str__(self):
+        return f"Average Reward Estimator ($k={self.k}$)"
+                  
     def __init__(self, k):
         self.avg_i = np.zeros(k)
 
@@ -464,6 +566,9 @@ class Estimator:
 
 
 class BernoulliEstimator(Estimator):
+
+    def __str__(self):
+        return f"Bernoulli Estimator ($k={self.k}$)"
 
     def __init__(self, k):
         Estimator.__init__(self, k)
@@ -485,6 +590,9 @@ class BernoulliEstimator(Estimator):
 
 class AlarmedPolicy(Budgeted, Estimator):
 
+    def __str__(self):
+        return f"Alarmed ($k={self.k}, b_0={self.b_0}, omega={self.omega}$)"
+                  
     def __init__(self, k, d=None, b_0=None, omega=1.0):
         Budgeted.__init__(self, k, d=d, b_0=b_0)
         Estimator.__init__(self, k)
