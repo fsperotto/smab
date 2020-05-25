@@ -93,7 +93,7 @@ class BasePolicy():
     """ Base class for any policy. """
 
     def __str__(self):
-        return f"Base Policy ($k={self.k}, w={self.w}$)"
+        return self.label
     
     def __init__(self, k, w=1):
         """ New policy."""
@@ -111,6 +111,7 @@ class BasePolicy():
         self.t = 0  #: Internal time-step
         self.n_i = np.zeros(self.k, dtype=int)  #: Number of pulls of each arm
         self.i_last = 0   #last pulled arm
+        self.label = f"Base Policy"
 
     def reset(self):
         """ Start the game (fill pulls with 0)."""
@@ -147,9 +148,10 @@ class BasePolicy():
 class RandomPolicy(BasePolicy):
     """ Choose an arm uniformly at random. """
 
-    def __str__(self):
-        return f"Random Policy ($k={self.k}, w={self.w}$)"
-    
+    def __init__(self, k, w=1):
+        super().__init__(k, w=w)
+        self.label = f"Random Policy"
+
     def choose(self):
         # base choice: verify mandatory initial rounds
         super().choose()
@@ -165,9 +167,6 @@ class RandomPolicy(BasePolicy):
 class FixedPolicy(BasePolicy):
     """ Choose always the same arm. """
 
-    def __str__(self):
-        return f"Fixed Policy ($k={self.k}, w={self.w}, i={self.fixed_i}$)"
-    
     def __init__(self, k, w=1, fixed_i=None):
         """ New fixed policy."""
         # Parameters
@@ -178,6 +177,7 @@ class FixedPolicy(BasePolicy):
         else:
             #the fixed policy is given
             self.fixed_i = fixed_i
+        self.label = f"Fixed Policy ($i={self.fixed_i}$)"
             
     def choose(self):
         # base choice: verify mandatory initial rounds
@@ -198,9 +198,6 @@ class EmpiricalMeansPolicy(BasePolicy):
         Note that it is equal to UCBalpha with alpha=0, only quicker.
     """
 
-    def __str__(self):
-        return f"Empirical Means ($k={self.k}, w={self.w}$)"
-    
     def __init__(self, k, v_ini=None, w=1):
         """ New generic index policy, based on empirical means. """
         super().__init__(k, w)
@@ -208,6 +205,7 @@ class EmpiricalMeansPolicy(BasePolicy):
         self.v_ini = v_ini  if  (v_ini is not None)  else  0.0   #: initial value (index or utility) for the arms
         self.v_i = np.full(k, v_ini)  #: value (index or utility) for each arm
         self.bests = np.arange(k)   #list of best arms (with equivalent highest utility), candidates
+        self.label = "Empirical Means"
 
     def reset(self):
         """ Initialize the policy for a new game."""
@@ -261,9 +259,6 @@ class EpsilonGreedyPolicy(EmpiricalMeansPolicy, RandomPolicy):
     - At every time step, a fully uniform random exploration has probability :math:`\varepsilon(t)` to happen, otherwise an exploitation is done.
     """
 
-    def __str__(self):
-        return f"Epsilon-Greedy ($k={self.k}, w={self.w}, eps={self.eps}$)"
-    
     def __init__(self, k, v_ini=None, w=1, eps=0.1):
         EmpiricalMeansPolicy.__init__(self, k, v_ini=v_ini, w=w)
         #assert 0 <= eps <= 1, "Error: the 'epsilon' parameter for EpsilonGreedy class has to be in [0, 1]."  # DEBUG
@@ -274,32 +269,33 @@ class EpsilonGreedyPolicy(EmpiricalMeansPolicy, RandomPolicy):
             print("SMAB warning: parameter epsilon cannot be negative; fixing it to 0.0")
             eps = 0.0
         self.eps = eps
+        self.label = f"$\epsilon$-Greedy ($\epsilon={self.eps:.2}$)"
 
     #alternative: randomize instant utilities
-    #def _calc_bests(self):
-    #    # Generate random number
-    #    p = rand()
-    #    """With a probability of epsilon, explore (uniform choice), otherwise exploit based on empirical mean rewards."""
-    #    if p < self.eps: # Proba epsilon : explore
-    #        return np.array([randint(self.k)])
-    #    else:  # Proba 1 - epsilon : exploit
-    #        return super()._calc_bests()
-
-    def choose(self):
+    def _calc_bests(self):
+        # Generate random number
+        p = rand()
         """With a probability of epsilon, explore (uniform choice), otherwise exploit based on empirical mean rewards."""
-        # base choice: verify mandatory initial rounds
-        BasePolicy.choose(self)
-        # otherwise:
-        if self.i_last is None:
-          # Generate random number
-          rnd_t = rand()
-          # Proba epsilon : explore
-          if rnd_t < self.eps: 
-            RandomPolicy.choose(self)
-          # Proba 1 - epsilon : exploit
-          else:
-            EmpiricalMeansPolicy.choose(self)
-        return self.i_last
+        if p < self.eps: # Proba epsilon : explore
+            return np.array([randint(self.k)])
+        else:  # Proba 1 - epsilon : exploit
+            return super()._calc_bests()
+
+    #def choose(self):
+    #    """With a probability of epsilon, explore (uniform choice), otherwise exploit based on empirical mean rewards."""
+    #    # base choice: verify mandatory initial rounds
+    #    BasePolicy.choose(self)
+    #    # otherwise:
+    #    if self.i_last is None:
+    #      # Generate random number
+    #      rnd_t = rand()
+    #      # Proba epsilon : explore
+    #      if rnd_t < self.eps: 
+    #        RandomPolicy.choose(self)
+    #      # Proba 1 - epsilon : exploit
+    #      else:
+    #        EmpiricalMeansPolicy.choose(self)
+    #    return self.i_last
 
 ################################################################################
         
@@ -311,7 +307,7 @@ class SoftMaxPolicy(EmpiricalMeansPolicy):
     """
 
     def __str__(self):
-        return f"SoftMax ($k={self.k}, w={self.w}, eta={self.eta}$)"
+        return 
     
     def __init__(self, k, v_ini=None, w=1, eta=None):
         super().__init__(k, v_ini=v_ini, w=w)
@@ -322,6 +318,8 @@ class SoftMaxPolicy(EmpiricalMeansPolicy):
         if eta is None:  # Use a default value for the temperature
             eta = np.sqrt(np.log(k) / k)
         self.eta = eta
+        self.label = f"SoftMax ($eta={self.eta:.2}$)"
+
 
     def _evaluate(self):
         r"""Update the trusts probabilities according to the Softmax (ie Boltzmann) distribution on accumulated rewards, and with the temperature :math:`\eta_t`.
