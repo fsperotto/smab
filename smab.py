@@ -351,7 +351,7 @@ class SoftMaxPolicy(EmpiricalMeansPolicy):
 class UCB1Policy(EmpiricalMeansPolicy):
 
     def __str__(self):
-        return f"UCB1 ($k={self.k}, w={self.w}$)"
+        return "UCB1"
                   
     def _evaluate(self):
         r""" Compute the current index, at time t and after :math:`N_k(t)` pulls of arm k:
@@ -373,7 +373,7 @@ class UCB1Policy(EmpiricalMeansPolicy):
 class BernKLUCBPolicy(EmpiricalMeansPolicy):
 
     def __str__(self):
-        return f"Bernoulli KL-UCB ($k={self.k}, w={self.w}$)"
+        return "Bern-KL-UCB"
                   
     @jit
     def _klBern(self, x, y):
@@ -458,7 +458,7 @@ class ThompsonPolicy(EmpiricalMeansPolicy):
     """
 
     def __str__(self):
-        return f"Thompson (Beta) Sampling ($k={self.k}, w={self.w}$)"
+        return "Thompson (Beta) Sampling"
                   
     def _evaluate(self):
         r""" Compute the current index, at time t and after :math:`N_k(t)` pulls of arm k, giving :math:`S_k(t)` rewards of 1, by sampling from the Beta posterior:
@@ -481,7 +481,7 @@ class BayesUCBPolicy(EmpiricalMeansPolicy):
     """
 
     def __str__(self):
-        return f"Bayes (Beta) UCB ($k={self.k}, w={self.w}$)"
+        return "Bayes (Beta) UCB"
                   
     def _evaluate(self):
         r""" Compute the current index, at time t and after :math:`N_k(t)` pulls of arm k, giving :math:`S_k(t)` rewards of 1, by taking the :math:`1 - \frac{1}{t}` quantile from the Beta posterior:
@@ -500,7 +500,7 @@ class BayesUCBPolicy(EmpiricalMeansPolicy):
 class MaRaBPolicy(EmpiricalMeansPolicy):
 
     def __str__(self):
-        return f"Empirical MaRaB ($k={self.k}, w={self.w}, alpha={self.alpha} $)"
+        return f"Empirical MaRaB ($\alpha={self.alpha}$)"
                   
     def __init__(self, k, v_ini=None, w=1, alpha=0.05, c=1e-6):
         super().__init__(k, v_ini=v_ini, w=w)
@@ -555,7 +555,7 @@ class Budgeted:
 class AlarmedUCBPolicy(UCB1Policy, Budgeted):
 
     def __str__(self):
-        return f"Alarmed-UCB($omega={self.omega}$)"
+        return f"Alarmed-UCB($\omega={self.omega}$)"
 
     def __init__(self, k, v_ini=None, w=1, d=None, b_0=None, omega=1.0):
         UCB1Policy.__init__(self, k, v_ini=v_ini, w=w)
@@ -587,7 +587,7 @@ class AlarmedUCBPolicy(UCB1Policy, Budgeted):
 class AlarmedBernKLUCBPolicy(BernKLUCBPolicy, Budgeted):
 
     def __str__(self):
-        return f"Safe-KL-UCB($omega={self.omega}$)"
+        return f"Safe-KL-UCB($\omega={self.omega}$)"
 
     def __init__(self, k, v_ini=None, w=1, d=None, b_0=None, omega=1.0):
         BernKLUCBPolicy.__init__(self, k, v_ini=v_ini, w=w)
