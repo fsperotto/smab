@@ -269,7 +269,7 @@ class EpsilonGreedyPolicy(EmpiricalMeansPolicy):
             print("SMAB warning: parameter epsilon cannot be negative; fixing it to 0.0")
             eps = 0.0
         self.eps = eps
-        self.label = f"$\epsilon$-Greedy ($\epsilon={self.eps:.2}$)"
+        self.label = "$\epsilon$-Greedy ($\epsilon=" + str(round(self.eps,2)) + "$)"
 
     ##alternative: randomize instant utilities
     #def _calc_bests(self):
