@@ -1159,7 +1159,7 @@ class SMAB():
             if (showlast == 'axis') or (showlast == 'both') or (showlast == True):
                 plt.annotate('%0.2f'%Y_i[-1], xy=(1, Y_i[-1]), xytext=(8, 0), xycoords=('axes fraction', 'data'), textcoords='offset points')                    
             if (showlast == 'legend') or (showlast == 'both') or (showlast == True):
-                names[i] = f'{names[i]} ({round(Y_i[-1],2)})'
+                names[i] = names[i] + f" ({round(Y_i[-1],2)})"
             
         plt.legend(names)
 
