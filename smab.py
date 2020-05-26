@@ -306,9 +306,6 @@ class SoftMaxPolicy(EmpiricalMeansPolicy):
       Reference: [Regret Analysis of Stochastic and Nonstochastic Multi-armed Bandit Problems, S.Bubeck & N.Cesa-Bianchi, §3.1](http://sbubeck.com/SurveyBCB12.pdf)
     """
 
-    def __str__(self):
-        return 
-    
     def __init__(self, k, v_ini=None, w=1, eta=None):
         super().__init__(k, v_ini=v_ini, w=w)
         #assert eta > 0, "Error: the temperature parameter for Softmax class has to be > 0."
