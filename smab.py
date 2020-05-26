@@ -154,7 +154,7 @@ class RandomPolicy(BasePolicy):
 
     def choose(self):
         # base choice: verify mandatory initial rounds
-        super().choose()
+        self.i_last = super().choose()
         # otherwise: random choice
         if self.i_last is None:
             # uniform choice among the arms
@@ -181,7 +181,7 @@ class FixedPolicy(BasePolicy):
             
     def choose(self):
         # base choice: verify mandatory initial rounds
-        super().choose()
+        self.i_last = super().choose()
         # otherwise: random choice
         if self.i_last is None:
             # fixed choice
@@ -220,7 +220,7 @@ class EmpiricalMeansPolicy(BasePolicy):
         .. note:: In almost all cases, there is a unique arm with maximal index, so we loose a lot of time with this generic code, but I couldn't find a way to be more efficient without loosing generality.
         """
         # base choice: verify mandatory initial rounds
-        super().choose()
+        self.i_last = super().choose()
         # otherwise: index choice
         if self.i_last is None:
           # Uniform choice among the best arms
@@ -271,31 +271,31 @@ class EpsilonGreedyPolicy(EmpiricalMeansPolicy, RandomPolicy):
         self.eps = eps
         self.label = f"$\epsilon$-Greedy ($\epsilon={self.eps:.2}$)"
 
-    #alternative: randomize instant utilities
-    def _calc_bests(self):
-        # Generate random number
-        p = rand()
-        """With a probability of epsilon, explore (uniform choice), otherwise exploit based on empirical mean rewards."""
-        if p < self.eps: # Proba epsilon : explore
-            return np.array([randint(self.k)])
-        else:  # Proba 1 - epsilon : exploit
-            return super()._calc_bests()
-
-    #def choose(self):
+    ##alternative: randomize instant utilities
+    #def _calc_bests(self):
+    #    # Generate random number
+    #    p = rand()
     #    """With a probability of epsilon, explore (uniform choice), otherwise exploit based on empirical mean rewards."""
-    #    # base choice: verify mandatory initial rounds
-    #    BasePolicy.choose(self)
-    #    # otherwise:
-    #    if self.i_last is None:
-    #      # Generate random number
-    #      rnd_t = rand()
-    #      # Proba epsilon : explore
-    #      if rnd_t < self.eps: 
-    #        RandomPolicy.choose(self)
-    #      # Proba 1 - epsilon : exploit
-    #      else:
-    #        EmpiricalMeansPolicy.choose(self)
-    #    return self.i_last
+    #    if p < self.eps: # Proba epsilon : explore
+    #        return np.array([randint(self.k)])
+    #    else:  # Proba 1 - epsilon : exploit
+    #        return super()._calc_bests()
+
+    def choose(self):
+        """With a probability of epsilon, explore (uniform choice), otherwise exploit based on empirical mean rewards."""
+        # base choice: verify mandatory initial rounds
+        self.i_last = BasePolicy.choose(self)
+        # otherwise:
+        if self.i_last is None:
+          # Generate random number
+          rnd_t = rand()
+          # Proba epsilon : explore
+          if rnd_t < self.eps: 
+            self.i_last = RandomPolicy.choose(self)
+          # Proba 1 - epsilon : exploit
+          else:
+            self.i_last = EmpiricalMeansPolicy.choose(self)
+        return self.i_last
 
 ################################################################################
         
@@ -334,7 +334,7 @@ class SoftMaxPolicy(EmpiricalMeansPolicy):
     def choose(self):
         """random selection with softmax probabilities, thank to :func:`numpy.random.choice`."""
         # base choice: verify mandatory initial rounds
-        BasePolicy.choose(self)
+        self.i_last = BasePolicy.choose(self)
         # otherwise:
         if self.i_last is None:
           # pondered choice among the arms based on their normalize v_i
