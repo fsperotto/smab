@@ -254,13 +254,13 @@ class EmpiricalMeansPolicy(BasePolicy):
     
 ################################################################################
 
-class EpsilonGreedyPolicy(EmpiricalMeansPolicy, RandomPolicy):
+class EpsilonGreedyPolicy(EmpiricalMeansPolicy):
     r""" The epsilon-greedy random policy.
     - At every time step, a fully uniform random exploration has probability :math:`\varepsilon(t)` to happen, otherwise an exploitation is done.
     """
 
     def __init__(self, k, v_ini=None, w=1, eps=0.1):
-        EmpiricalMeansPolicy.__init__(self, k, v_ini=v_ini, w=w)
+        super().__init__(k, v_ini=v_ini, w=w)
         #assert 0 <= eps <= 1, "Error: the 'epsilon' parameter for EpsilonGreedy class has to be in [0, 1]."  # DEBUG
         if eps > 1.0:
             print("SMAB warning: parameter epsilon cannot be greater than 1.0; fixing it to 1.0")
@@ -291,10 +291,11 @@ class EpsilonGreedyPolicy(EmpiricalMeansPolicy, RandomPolicy):
           rnd_t = rand()
           # Proba epsilon : explore
           if rnd_t < self.eps: 
-            self.i_last = RandomPolicy.choose(self)
+            # uniform choice among the arms
+            self.i_last = randint(self.k)
           # Proba 1 - epsilon : exploit
           else:
-            self.i_last = EmpiricalMeansPolicy.choose(self)
+            self.i_last = super().choose()
         return self.i_last
 
 ################################################################################
