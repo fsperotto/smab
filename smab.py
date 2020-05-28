@@ -733,10 +733,10 @@ class SMAB():
 
         #arms properties
         self.mu_a = np.array([a.mean for a in A]) * self.d.r_amp + self.d.r_min     #means
-        self.a_star = np.argmax(self.mu_a)                                          #best arm index
-        self.a_worst = np.argmin(self.mu_a)                                         #worst arm index
-        self.mu_star = np.max(self.mu_a) * self.d.r_amp + self.d.r_min              #best mean
-        self.mu_worst = np.min(self.mu_a) * self.d.r_amp + self.d.r_min             #worst mean
+        self.a_star = np.argmax(self.mu_a)             #best arm index
+        self.a_worst = np.argmin(self.mu_a)            #worst arm index
+        self.mu_star = np.max(self.mu_a)               #best mean
+        self.mu_worst = np.min(self.mu_a)              #worst mean
 
         #budget
         self.b_0 = b_0   
@@ -894,8 +894,8 @@ class SMAB():
         ML = self.mu_star - MR
 
         #averaged average regret (float 2d matrix [t x j]) #averaged over time and repetitions
-        #self.average_mean_regret_jt = self.MML = np.mean(ML, axis=0)
-        self.average_mean_regret_jt = self.MML  = self.mu_star - self.MMR
+        self.average_mean_regret_jt = self.MML = np.mean(ML, axis=0)
+        #self.average_mean_regret_jt = self.MML  = self.mu_star - self.MMR
         
         #cumulated regret (float 3d matrix [t x j x i])
         SL = np.cumsum(L, axis=2, dtype='float')
