@@ -830,13 +830,13 @@ class SMAB():
         N_a = np.cumsum(H_a, axis=3)
 
         #averaged progressive actions count (float 3d matrix [t x j x a]) #averaged over repetitions
-        self.MN_a = np.mean(N_a, axis=0)		
+        self.average_pulls_count_ajt = self.MN_a = np.mean(N_a, axis=0)		
 
         #progressive actions frequency (float 4d matrix [t x j x i x a])
         F_a = N_a / self.T1
 
         #averaged progressive actions frequency (float 3d matrix [t x j x a]) #averaged over repetitions
-        self.MF_a = np.mean(F_a, axis=0)
+        self.average_pulls_freq_ajt = self.MF_a = np.mean(F_a, axis=0)
 
         if (self.w is not None):
 
@@ -844,13 +844,13 @@ class SMAB():
             NW_a = np.concatenate((N_a[:,:,:,:self.w], N_a[:,:,:,self.w:] - N_a[:,:,:,:-self.w]), axis=3)
 
             #averaged window count (float 3d matrix [t x j x a]) #averaged over repetitions
-            self.MNW_a = np.mean(NW_a, axis=0)		
+            self.window_average_pulls_count_ajt = self.MNW_a = np.mean(NW_a, axis=0)		
 
             #window frequency (float 4d matrix [t x j x i x a])
             FW_a = np.concatenate((N_a[:,:,:,:self.w] / np.arange(1,self.w+1, dtype='float'), (N_a[:,:,:,self.w:] - N_a[:,:,:,:-self.w]) / float(self.w)), axis=3) 
 
             #averaged window frequency (float 3d matrix [t x j x a]) #averaged over repetitions
-            self.MFW_a = np.mean(FW_a, axis=0)		
+            self.window_average_pulls_freq_ajt = self.MFW_a = np.mean(FW_a, axis=0)		
 
         #final arm pull count (int 3d matrix [j x i x a])
         #n_a = N_a[:,:,:,self.h-1]
@@ -869,7 +869,7 @@ class SMAB():
         SR = np.cumsum(R, axis=2, dtype='float')
 
         #averaged progressive cumulative rewards (float 2d matrix [t x j]) #averaged over repetitions
-        self.MSR = np.mean(SR, axis=0)
+        self.averaged_cumulative_rewards_jt = self.MSR = np.mean(SR, axis=0)
 
         #final rewards (float 2d matrix [j x i])
         sr = SR[:,:,-1]
