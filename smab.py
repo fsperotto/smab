@@ -732,11 +732,11 @@ class SMAB():
         self.K1 = range(1,self.k+1)     #range for arms (1 ... k)
 
         #arms properties
-        self.mu_a = np.array([a.mean for a in A])  #means
-        self.mu_star = np.max(self.mu_a)           #best mean
-        self.a_star = np.argmax(self.mu_a)         #best arm index
-        self.mu_worst = np.min(self.mu_a)          #worst mean
-        self.a_worst = np.argmin(self.mu_a)        #worst arm index
+        self.mu_a = np.array([a.mean for a in A]) * self.d.r_amp + self.d.r_min     #means
+        self.a_star = np.argmax(self.mu_a)                                          #best arm index
+        self.a_worst = np.argmin(self.mu_a)                                         #worst arm index
+        self.mu_star = np.max(self.mu_a) * self.d.r_amp + self.d.r_min              #best mean
+        self.mu_worst = np.min(self.mu_a) * self.d.r_amp + self.d.r_min             #worst mean
 
         #budget
         self.b_0 = b_0   
@@ -817,6 +817,7 @@ class SMAB():
                     #if (b == 0):
                     #    break
         
+        #Translate Rewards following Domain
         R = X * self.d.r_amp + self.d.r_min
 
         #actions history, with initial action index being 1, not 0
