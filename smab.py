@@ -869,7 +869,7 @@ class SMAB():
         SR = np.cumsum(R, axis=2, dtype='float')
 
         #averaged progressive cumulative rewards (float 2d matrix [t x j]) #averaged over repetitions
-        self.averaged_cumulative_rewards_jt = self.MSR = np.mean(SR, axis=0)
+        self.average_cumulative_rewards_jt = self.MSR = np.mean(SR, axis=0)
 
         #final rewards (float 2d matrix [j x i])
         sr = SR[:,:,-1]
@@ -883,7 +883,7 @@ class SMAB():
         MR = SR / self.T1
 
         #averaged progressive average rewards (float 2d matrix [t x j]) #averaged over time and repetitions
-        self.MMR = np.mean(MR, axis=0)
+        self.averaged_mean_reward_jt = self.MMR = np.mean(MR, axis=0)
 
         #regret (float 3d matrix [t x j x i])
         L = self.mu_star - R
@@ -894,13 +894,14 @@ class SMAB():
         ML = self.mu_star - MR
 
         #averaged average regret (float 2d matrix [t x j]) #averaged over time and repetitions
-        self.MML = np.mean(ML, axis=0)
-
+        #self.average_mean_regret_jt = self.MML = np.mean(ML, axis=0)
+        self.average_mean_regret_jt = self.MML  = self.mu_star - self.MMR
+        
         #cumulated regret (float 3d matrix [t x j x i])
         SL = np.cumsum(L, axis=2, dtype='float')
 
         #averaged cumulated regret (float 2d matrix [t x j]) #averaged over repetitions
-        self.MSL = np.mean(SL, axis=0)
+        self.average_cumulative_regret_jt = self.MSL = np.mean(SL, axis=0)
 
         #final cumulated regret (float 2d matrix [j x i])
         sl = SL[:,:,-1]
