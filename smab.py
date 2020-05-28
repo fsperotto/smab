@@ -1068,7 +1068,7 @@ class SMAB():
     """ 
     Plot a line graph
     """
-    def plot_progression(self, Y, X=None, names=None, linestyles=None, linecolors=None, xlabel="$t$", ylabel=None, reorder='desc', showlast='legend', title=None, filename=None, figsize=(12,8), show=True):
+    def plot(self, Y, X=None, names=None, linestyles=None, linecolors=None, xlabel="$t$", ylabel=None, reorder='desc', showlast='legend', title=None, filename=None, figsize=(12,8), show=True):
 
         fig = plt.figure(figsize=(12,8))
         
