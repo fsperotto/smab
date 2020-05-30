@@ -95,7 +95,7 @@ class BasePolicy():
     def __str__(self):
         return self.label
     
-    def __init__(self, k, w=1):
+    def __init__(self, k, w=1, label=None):
         """ New policy."""
         # Parameters
         #assert k > 0, "Error, the number of arms must be a positive integer."  # DEBUG
@@ -111,7 +111,10 @@ class BasePolicy():
         self.t = 0  #: Internal time-step
         self.n_i = np.zeros(self.k, dtype=int)  #: Number of pulls of each arm
         self.i_last = 0   #last pulled arm
-        self.label = f"Base Policy"
+        if label is not None:
+            self.label = label
+        else:
+            self.label = f"Base Policy"
 
     def reset(self):
         """ Start the game (fill pulls with 0)."""
@@ -148,9 +151,10 @@ class BasePolicy():
 class RandomPolicy(BasePolicy):
     """ Choose an arm uniformly at random. """
 
-    def __init__(self, k, w=1):
-        super().__init__(k, w=w)
-        self.label = f"Random Policy"
+    def __init__(self, k, w=1, label=None):
+        super().__init__(k, w=w, label=label)
+        if label is None:
+            self.label = f"Random Policy"
 
     def choose(self):
         # base choice: verify mandatory initial rounds
@@ -167,17 +171,18 @@ class RandomPolicy(BasePolicy):
 class FixedPolicy(BasePolicy):
     """ Choose always the same arm. """
 
-    def __init__(self, k, w=1, fixed_i=None):
+    def __init__(self, k, w=1, fixed_i=None, label=None):
         """ New fixed policy."""
         # Parameters
-        super().__init__(k, w)
+        super().__init__(k, w=w, label=label)
         if (fixed_i is None):
             #choose the fixed policy at random
             self.fixed_i = randint(self.k)
         else:
             #the fixed policy is given
             self.fixed_i = fixed_i
-        self.label = f"Fixed Policy ($i={self.fixed_i}$)"
+        if label is None:
+            self.label = f"Fixed Policy ($i={self.fixed_i}$)"
             
     def choose(self):
         # base choice: verify mandatory initial rounds
@@ -198,14 +203,15 @@ class EmpiricalMeansPolicy(BasePolicy):
         Note that it is equal to UCBalpha with alpha=0, only quicker.
     """
 
-    def __init__(self, k, v_ini=None, w=1):
+    def __init__(self, k, v_ini=None, w=1, label=None):
         """ New generic index policy, based on empirical means. """
-        super().__init__(k, w)
+        super().__init__(k, w=w, label=label)
         self.s_i = np.full(k, 0.0)  #: cumulated rewards for each arm
         self.v_ini = v_ini  if  (v_ini is not None)  else  0.0   #: initial value (index or utility) for the arms
         self.v_i = np.full(k, v_ini)  #: value (index or utility) for each arm
         self.bests = np.arange(k)   #list of best arms (with equivalent highest utility), candidates
-        self.label = "Empirical Means"
+        if label is None:
+            self.label = "Empirical Means"
 
     def reset(self):
         """ Initialize the policy for a new game."""
@@ -253,14 +259,13 @@ class EmpiricalMeansPolicy(BasePolicy):
         return np.flatnonzero(self.v_i == np.max(self.v_i))
     
 ################################################################################
-
 class EpsilonGreedyPolicy(EmpiricalMeansPolicy):
     r""" The epsilon-greedy random policy.
     - At every time step, a fully uniform random exploration has probability :math:`\varepsilon(t)` to happen, otherwise an exploitation is done.
     """
 
-    def __init__(self, k, v_ini=None, w=1, eps=0.1):
-        super().__init__(k, v_ini=v_ini, w=w)
+    def __init__(self, k, v_ini=None, w=1, eps=0.1, label=None):
+        super().__init__(k, v_ini=v_ini, w=w, label=label)
         #assert 0 <= eps <= 1, "Error: the 'epsilon' parameter for EpsilonGreedy class has to be in [0, 1]."  # DEBUG
         if eps > 1.0:
             print("SMAB warning: parameter epsilon cannot be greater than 1.0; fixing it to 1.0")
@@ -269,7 +274,8 @@ class EpsilonGreedyPolicy(EmpiricalMeansPolicy):
             print("SMAB warning: parameter epsilon cannot be negative; fixing it to 0.0")
             eps = 0.0
         self.eps = eps
-        self.label = "$\epsilon$-Greedy ($\epsilon=" + str(round(self.eps,2)) + "$)"
+        if label is None:
+            self.label = "$\epsilon$-Greedy ($\epsilon=" + str(round(self.eps,2)) + "$)"
 
     ##alternative: randomize instant utilities
     #def _calc_bests(self):
@@ -301,14 +307,14 @@ class EpsilonGreedyPolicy(EmpiricalMeansPolicy):
 ################################################################################
         
 class SoftMaxPolicy(EmpiricalMeansPolicy):
-    r"""The Boltzmann Exploration (Softmax) index policy, with a constant temperature :math:`\eta_t`.
+    r"""The Boltzmann , label=NoneExploration (Softmax) index policy, with a constant temperature :math:`\eta_t`.
     - Reference: [Algorithms for the multi-armed bandit problem, V.Kuleshov & D.Precup, JMLR, 2008, §2.1](http://www.cs.mcgill.ca/~vkules/bandits.pdf) and [Boltzmann Exploration Done Right, N.Cesa-Bianchi & C.Gentile & G.Lugosi & G.Neu, arXiv 2017](https://arxiv.org/pdf/1705.10257.pdf).
     - Very similar to Exp3 but uses a Boltzmann distribution.
       Reference: [Regret Analysis of Stochastic and Nonstochastic Multi-armed Bandit Problems, S.Bubeck & N.Cesa-Bianchi, §3.1](http://sbubeck.com/SurveyBCB12.pdf)
     """
 
-    def __init__(self, k, v_ini=None, w=1, eta=None):
-        super().__init__(k, v_ini=v_ini, w=w)
+    def __init__(self, k, v_ini=None, w=1, eta=None, label=None):
+        super().__init__(k, v_ini=v_ini, w=w, label=label)
         #assert eta > 0, "Error: the temperature parameter for Softmax class has to be > 0."
         if (eta is not None) and (eta <= 0.0):
             print("SMAB warning: the temperature parameter for Softmax has to be positive; setting it to default.")
@@ -316,8 +322,8 @@ class SoftMaxPolicy(EmpiricalMeansPolicy):
         if eta is None:  # Use a default value for the temperature
             eta = np.sqrt(np.log(k) / k)
         self.eta = eta
-        self.label = f"SoftMax ($eta={self.eta:.2}$)"
-
+        if label is None:
+            self.label = f"SoftMax ($eta={round(self.eta,2)}$)"
 
     def _evaluate(self):
         r"""Update the trusts probabilities according to the Softmax (ie Boltzmann) distribution on accumulated rewards, and with the temperature :math:`\eta_t`.
@@ -350,9 +356,11 @@ class SoftMaxPolicy(EmpiricalMeansPolicy):
 
 class UCB1Policy(EmpiricalMeansPolicy):
 
-    def __str__(self):
-        return "UCB1"
-                  
+    def __init__(self, k, v_ini=None, w=1, label=None):
+        super().__init__(k, v_ini=v_ini, w=w, label=label)
+        if label is None:
+            self.label = "UCB1"
+
     def _evaluate(self):
         r""" Compute the current index, at time t and after :math:`N_k(t)` pulls of arm k:
         .. math:: I_k(t) = \frac{X_k(t)}{N_k(t)} + \sqrt{\frac{2 \log(t)}{N_k(t)}}.
@@ -372,8 +380,10 @@ class UCB1Policy(EmpiricalMeansPolicy):
 
 class BernKLUCBPolicy(EmpiricalMeansPolicy):
 
-    def __str__(self):
-        return "Bern-KL-UCB"
+    def __init__(self, k, v_ini=None, w=1, label=None):
+        super().__init__(k, v_ini=v_ini, w=w, label=label)
+        if label is None:
+            self.label = f"KL-UCB (Bern)"
                   
     @jit
     def _klBern(self, x, y):
@@ -457,8 +467,10 @@ class ThompsonPolicy(EmpiricalMeansPolicy):
     - Reference: [Thompson - Biometrika, 1933].
     """
 
-    def __str__(self):
-        return "Thompson (Beta) Sampling"
+    def __init__(self, k, v_ini=None, w=1, label=None):
+        super().__init__(k, v_ini=v_ini, w=w, label=label)
+        if label is None:
+            self.label = "Thompson-Sampling (Beta)"
                   
     def _evaluate(self):
         r""" Compute the current index, at time t and after :math:`N_k(t)` pulls of arm k, giving :math:`S_k(t)` rewards of 1, by sampling from the Beta posterior:
@@ -480,8 +492,10 @@ class BayesUCBPolicy(EmpiricalMeansPolicy):
     -Reference: [Kaufmann, Cappé & Garivier - AISTATS, 2012].
     """
 
-    def __str__(self):
-        return "Bayes (Beta) UCB"
+    def __init__(self, k, v_ini=None, w=1, label=None):
+        super().__init__(k, v_ini=v_ini, w=w, label=label)
+        if label is None:
+            self.label = "Bayes-UCB (Beta)"
                   
     def _evaluate(self):
         r""" Compute the current index, at time t and after :math:`N_k(t)` pulls of arm k, giving :math:`S_k(t)` rewards of 1, by taking the :math:`1 - \frac{1}{t}` quantile from the Beta posterior:
@@ -499,14 +513,13 @@ class BayesUCBPolicy(EmpiricalMeansPolicy):
 # class for the marab algorithm
 class MaRaBPolicy(EmpiricalMeansPolicy):
 
-    def __str__(self):
-        return f"Empirical MaRaB ($\alpha={self.alpha}$)"
-                  
     def __init__(self, k, v_ini=None, w=1, alpha=0.05, c=1e-6):
-        super().__init__(k, v_ini=v_ini, w=w)
+        super().__init__(k, v_ini=v_ini, w=w, label=label)
         self.alpha = alpha
         self.c = c
         self.reward_samples = [np.array([0.0]) for a in range(k)]
+        if label is None:
+            self.label = f"Empirical-MARAB ($\alpha={self.alpha}$)"
         
     def reset(self):
         super().reset()
@@ -554,13 +567,12 @@ class Budgeted:
 
 class AlarmedUCBPolicy(UCB1Policy, Budgeted):
 
-    def __str__(self):
-        return f"Alarmed-UCB($\omega={self.omega}$)"
-
-    def __init__(self, k, v_ini=None, w=1, d=None, b_0=None, omega=1.0):
-        UCB1Policy.__init__(self, k, v_ini=v_ini, w=w)
+    def __init__(self, k, v_ini=None, w=1, label=None, d=None, b_0=None, omega=1.0):
+        UCB1Policy.__init__(self, k, v_ini=v_ini, w=w, label=label)
         Budgeted.__init__(self, k, d=d, b_0=b_0)
         self.omega = omega   #safety-critical warning threshold for budget level
+        if label is None:
+            self.label = f"Alarmed-UCB($\omega={self.omega}$)"
 
     def reset(self):
         UCB1Policy.reset(self)
@@ -586,13 +598,12 @@ class AlarmedUCBPolicy(UCB1Policy, Budgeted):
 
 class AlarmedBernKLUCBPolicy(BernKLUCBPolicy, Budgeted):
 
-    def __str__(self):
-        return f"Safe-KL-UCB($\omega={self.omega}$)"
-
-    def __init__(self, k, v_ini=None, w=1, d=None, b_0=None, omega=1.0):
-        BernKLUCBPolicy.__init__(self, k, v_ini=v_ini, w=w)
+    def __init__(self, k, v_ini=None, w=1, label=None, d=None, b_0=None, omega=1.0):
+        BernKLUCBPolicy.__init__(self, k, v_ini=v_ini, w=w, label=label)
         Budgeted.__init__(self, k, d=d, b_0=b_0)
         self.omega = omega   #safety-critical warning threshold for budget level
+        if label is None:
+            self.label = f"Alarmed-KL-UCB($\omega={self.omega}$)"
 
     def reset(self):
         BernKLUCBPolicy.reset(self)
@@ -618,13 +629,12 @@ class AlarmedBernKLUCBPolicy(BernKLUCBPolicy, Budgeted):
 
 class AlarmedEpsilonGreedyPolicy(EpsilonGreedyPolicy, Budgeted):
 
-    def __str__(self):
-        return f"Safe-$\epsilon$-greedy($\epsilon={self.eps}, \omega={self.omega}$)"
-
-    def __init__(self, k, v_ini=None, w=1, d=None, b_0=None, omega=1.0, eps=0.9):
-        EpsilonGreedyPolicy.__init__(self, k, v_ini=v_ini, w=w, eps=eps)
+    def __init__(self, k, v_ini=None, w=1, label=None, d=None, b_0=None, omega=1.0, eps=0.9):
+        EpsilonGreedyPolicy.__init__(self, k, v_ini=v_ini, w=w, label=label, eps=eps)
         Budgeted.__init__(self, k, d=d, b_0=b_0)
         self.omega = omega   #safety-critical warning threshold for budget level
+        if label is None:
+            self.label = "Alarmed-$\epsilon$-greedy($\epsilon=" + round(self.eps,2) + "\omega=" + round(self.omega, 2) + "$)"
 
     def reset(self):
         EpsilonGreedyPolicy.reset(self)
@@ -653,13 +663,12 @@ class AlarmedEpsilonGreedyPolicy(EpsilonGreedyPolicy, Budgeted):
 
 class BanditGamblerPolicy(EmpiricalMeansPolicy, Budgeted):
 
-    def __str__(self):
-        return f"Bandit Gambler"
-
-    def __init__(self, k, v_ini=None, w=1, d=None, b_0=None):
+    def __init__(self, k, v_ini=None, w=1, label=None, d=None, b_0=None):
         #super().__init__(k, v_ini=v_ini, w=w, d=d, b_0=b_0)
-        EmpiricalMeansPolicy.__init__(self, k, v_ini=v_ini, w=w)
+        EmpiricalMeansPolicy.__init__(self, k, v_ini=v_ini, w=w, label=label)
         Budgeted.__init__(self, k, d=d, b_0=b_0)
+        if label is None:
+            self.label = "Bandit-Gambler"
 
     #@jit
     def ruin_estimated_prob(self, i):
@@ -687,8 +696,11 @@ class BanditGamblerPolicy(EmpiricalMeansPolicy, Budgeted):
 
 class BanditGamblerUCBPolicy(BanditGamblerPolicy):
 
-    def __str__(self):
-        return f"Bandit Gambler UCB"
+    def __init__(self, k, v_ini=None, w=1, label=None, d=None, b_0=None):
+        super().__init__(k, v_ini=v_ini, w=w, label=label)
+        Budgeted.__init__(self, k, d=d, b_0=b_0)
+        if label is None:
+            self.label = "Bandit-Gambler-UCB"
 
     def ruin_estimated_prob(self, i):
         n_i = self.n_i[i]
