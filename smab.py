@@ -787,6 +787,7 @@ class SMAB():
         
         if num_threads is None:
             num_threads = mp.cpu_count()
+            
         # Initialize Rewards and History of selected Actions (3d matrices [t x g x i])
         X = np.zeros((self.n, self.m, self.h), dtype=float)  #successes
         #R = np.zeros((self.n, self.m, self.h), dtype=float)  #rewards
@@ -798,21 +799,22 @@ class SMAB():
         if prev_draw:
             X_i_t_j = np.array([arm.draw((self.h, self.n)) for arm in self.A])	
 
-        # For each repetition
-        #for j in tqdm(range(self.n), desc=tqdm_desc_rep, leave=(tqdm_leave and self.m == 1), disable=(tqdm_disable or self.n == 1)):
-        #for j in tqdm(range(self.n), desc=tqdm_desc_rep, leave=tqdm_leave, disable=(tqdm_disable or self.n == 1)):
-        for j in tqdm(range(self.n)):
-        
-            # For each algorithm
-            #for g, alg in enumerate(tqdm(self.G, desc=tqdm_desc_alg, leave=tqdm_leave, disable=(tqdm_disable or self.m == 1))):
-            for g, alg in enumerate(self.G):
+        #no parallelism
+        if (num_threads <= 1):
+            
+            # For each repetition
+            #for j in tqdm(range(self.n), desc=tqdm_desc_rep, leave=(tqdm_leave and self.m == 1), disable=(tqdm_disable or self.n == 1)):
+            #for j in tqdm(range(self.n), desc=tqdm_desc_rep, leave=tqdm_leave, disable=(tqdm_disable or self.n == 1)):
+            for j in tqdm(range(self.n)):
 
-                # Initialize
-                alg.reset()
-                #s = 0.0
+                # For each algorithm
+                #for g, alg in enumerate(tqdm(self.G, desc=tqdm_desc_alg, leave=tqdm_leave, disable=(tqdm_disable or self.m == 1))):
+                for g, alg in enumerate(self.G):
 
-                #no parallelism
-                if (num_threads <= 1):
+                    # Initialize
+                    alg.reset()
+                    #s = 0.0
+
                     # Loop on time
                     #for t in tqdm(self.T, desc=tqdm_desc_it, leave=tqdm_leave, disable=(tqdm_disable or self.n > 1 or self.m > 1) ):
                     for t in self.T:
@@ -836,10 +838,17 @@ class SMAB():
                         #B[j, g, t] = b
                         #if (b == 0):
                         #    break
-                #parallelism
-                else: 
 
-                    def _cycle_loop(t):
+        #parallelism
+        else: 
+
+            def _run_repetition(j):
+                # For each algorithm
+                for g, alg in enumerate(self.G):
+                    # Initialize
+                    alg.reset()
+                    # Loop on time
+                    for t in self.T:
                         # The algorithm chooses the arm to play
                         i = alg.choose()
                         # The arm played gives reward
@@ -852,20 +861,17 @@ class SMAB():
                         # Save both
                         H[j, g, t] = i
                         X[j, g, t] = x
+                
+            # By placing the executor inside a with block, the executors shutdown method will be called cleaning up threads.
+            # By default, the executor sets number of workers to 5 times the number of CPUs.
+            with ThreadPoolExecutor(num_threads) as executor:
 
-                    # By placing the executor inside a with block, the executors shutdown method will be called cleaning up threads.
-                    # By default, the executor sets number of workers to 5 times the number of CPUs.
-                    with ThreadPoolExecutor() as executor:
+                # Executes concurrently using threads each repetirion
+                executor.map(_cycle_loop, range(self.n))                    
 
-                        # This allows a function that normally takes n arguments to work with the map function that expects a function of a single argument.
-                        #fn = partial(_cycle_loop, other_parameter)
-
-                        # Executes fn concurrently using threads on the links iterable.
-                        executor.map(_cycle_loop, self.T)                    
-                    
-                    #using Pool
-                    #with Pool(num_threads) as p:
-                    #   p.map(_cycle_loop, self.T)
+            #using Pool
+            #with Pool(num_threads) as p:
+            #   p.map(_cycle_loop, self.T)
                     
         #Translate Rewards following Domain
         R = X * self.d.r_amp + self.d.r_min
