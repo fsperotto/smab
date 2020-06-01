@@ -15,6 +15,8 @@ from collections import Iterable
 #from IPython.display import display
 import matplotlib.pyplot as plt
 #import matplotlib.mlab as mlab
+from multiprocessing import Pool
+from functools import partial
 import datetime
 #%matplotlib inline
 #%matplotlib notebook
@@ -774,7 +776,7 @@ class SMAB():
             self.run()
 
 
-    def run(self, tqdm_desc_it="iterations", tqdm_desc_alg="algorithms", tqdm_desc_rep="repetitions", tqdm_leave=False, tqdm_disable=False, prev_draw=True):
+    def run(self, tqdm_desc_it="iterations", tqdm_desc_alg="algorithms", tqdm_desc_rep="repetitions", tqdm_leave=False, tqdm_disable=False, prev_draw=True, num_threads=1):
 
         #time-horizon (1 ... t ... h)
         #arms (1 ... i ... k)
@@ -796,7 +798,7 @@ class SMAB():
         #for j in tqdm(range(self.n), desc=tqdm_desc_rep, leave=(tqdm_leave and self.m == 1), disable=(tqdm_disable or self.n == 1)):
         #for j in tqdm(range(self.n), desc=tqdm_desc_rep, leave=tqdm_leave, disable=(tqdm_disable or self.n == 1)):
         for j in tqdm(range(self.n)):
-
+        
             # For each algorithm
             #for g, alg in enumerate(tqdm(self.G, desc=tqdm_desc_alg, leave=tqdm_leave, disable=(tqdm_disable or self.m == 1))):
             for g, alg in enumerate(self.G):
@@ -805,30 +807,51 @@ class SMAB():
                 alg.reset()
                 #s = 0.0
 
-                # Loop on time
-                #for t in tqdm(self.T, desc=tqdm_desc_it, leave=tqdm_leave, disable=(tqdm_disable or self.n > 1 or self.m > 1) ):
-                for t in self.T:
-                    # The algorithm chooses the arm to play
-                    i = alg.choose()
-                    # The arm played gives reward
-                    if prev_draw:
-                        x = X_i_t_j[i, t, j]
-                    else:
-                        x = self.A[i].draw()
-                    # The reward is returned to the algorithm
-                    alg.observe(x)
-                    # Save both
-                    H[j, g, t] = i
-                    X[j, g, t] = x
-                    #r = x * self.d.r_amp + self.d.r_min
-                    #s += r
-                    #R[j, g, t] = r
-                    #SR[j, g, t] = s
-                    #b = s + self.b_0
-                    #B[j, g, t] = b
-                    #if (b == 0):
-                    #    break
-        
+                #no parallelism
+                if (num_threads <= 1):
+                    # Loop on time
+                    #for t in tqdm(self.T, desc=tqdm_desc_it, leave=tqdm_leave, disable=(tqdm_disable or self.n > 1 or self.m > 1) ):
+                    for t in self.T:
+                        # The algorithm chooses the arm to play
+                        i = alg.choose()
+                        # The arm played gives reward
+                        if prev_draw:
+                            x = X_i_t_j[i, t, j]
+                        else:
+                            x = self.A[i].draw()
+                        # The reward is returned to the algorithm
+                        alg.observe(x)
+                        # Save both
+                        H[j, g, t] = i
+                        X[j, g, t] = x
+                        #r = x * self.d.r_amp + self.d.r_min
+                        #s += r
+                        #R[j, g, t] = r
+                        #SR[j, g, t] = s
+                        #b = s + self.b_0
+                        #B[j, g, t] = b
+                        #if (b == 0):
+                        #    break
+                #parallelism
+                else: 
+
+                    def _cycle_loop(t):
+                        # The algorithm chooses the arm to play
+                        i = alg.choose()
+                        # The arm played gives reward
+                        if prev_draw:
+                            x = X_i_t_j[i, t, j]
+                        else:
+                            x = self.A[i].draw()
+                        # The reward is returned to the algorithm
+                        alg.observe(x)
+                        # Save both
+                        H[j, g, t] = i
+                        X[j, g, t] = x
+                    
+                    with Pool(num_threads) as p:
+                        p.map(f, self.T)
+                    
         #Translate Rewards following Domain
         R = X * self.d.r_amp + self.d.r_min
 
