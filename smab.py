@@ -850,7 +850,7 @@ class SMAB():
                         X[j, g, t] = x
                     
                     with Pool(num_threads) as p:
-                        p.map(f, self.T)
+                        p.map(_cycle_loop, self.T)
                     
         #Translate Rewards following Domain
         R = X * self.d.r_amp + self.d.r_min
