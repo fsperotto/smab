@@ -867,7 +867,7 @@ class SMAB():
             with ThreadPoolExecutor(num_threads) as executor:
 
                 # Executes concurrently using threads each repetirion
-                executor.map(_cycle_loop, range(self.n))                    
+                executor.map(_run_repetition, range(self.n))                    
 
             #using Pool
             #with Pool(num_threads) as p:
