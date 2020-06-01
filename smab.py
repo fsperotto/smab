@@ -15,8 +15,10 @@ from collections import Iterable
 #from IPython.display import display
 import matplotlib.pyplot as plt
 #import matplotlib.mlab as mlab
+import multiprocessing as mp
 from multiprocessing import Pool
 from functools import partial
+from concurrent.futures import ThreadPoolExecutor
 import datetime
 #%matplotlib inline
 #%matplotlib notebook
@@ -782,7 +784,9 @@ class SMAB():
         #arms (1 ... i ... k)
         #repetitions (1 ... j ... n)
         #algorithms (1 ... g ... m)
-
+        
+        if num_threads is None:
+            num_threads = mp.cpu_count()
         # Initialize Rewards and History of selected Actions (3d matrices [t x g x i])
         X = np.zeros((self.n, self.m, self.h), dtype=float)  #successes
         #R = np.zeros((self.n, self.m, self.h), dtype=float)  #rewards
@@ -848,9 +852,20 @@ class SMAB():
                         # Save both
                         H[j, g, t] = i
                         X[j, g, t] = x
+
+                    # By placing the executor inside a with block, the executors shutdown method will be called cleaning up threads.
+                    # By default, the executor sets number of workers to 5 times the number of CPUs.
+                    with ThreadPoolExecutor() as executor:
+
+                        # This allows a function that normally takes n arguments to work with the map function that expects a function of a single argument.
+                        #fn = partial(_cycle_loop, other_parameter)
+
+                        # Executes fn concurrently using threads on the links iterable.
+                        executor.map(_cycle_loop, self.T)                    
                     
-                    with Pool(num_threads) as p:
-                        p.map(_cycle_loop, self.T)
+                    #using Pool
+                    #with Pool(num_threads) as p:
+                    #   p.map(_cycle_loop, self.T)
                     
         #Translate Rewards following Domain
         R = X * self.d.r_amp + self.d.r_min
