@@ -865,22 +865,22 @@ class SMAB():
                         #if (b == 0):
                         #    break
 
-        #parallelism
-        else: 
-
-            for j in tqdm(range(self.n)):
-                for g, alg in enumerate(self.G):
-            
-                    #using Pool
-                    # map function that expects a function of a single argument
-                    #f = partial(_run_episode, params)                    
-                    with Pool(num_threads) as p:
-                    #   p.map(_cycle_loop, self.T)
-                        #H_t, X_t = pool.starmap(_run_episode, [(row, 4, 8) for row in data])
-                        H_t, X_t = pool.apply(_run_episode, args=(self.A, alg, self.h, X_i_t_j[:, :, j])
-                        #H_t, X_t = [pool.apply(_run_episode, args=(self.A, alg, self.h, X_i_t_j[i, t]) for X_i_t in X_i_t_j[i, t]]
-                    #p.close()                    
-
+#        #parallelism
+#        else: 
+#
+#            for j in tqdm(range(self.n)):
+#                for g, alg in enumerate(self.G):
+#            
+#                    #using Pool
+#                    # map function that expects a function of a single argument
+#                    #f = partial(_run_episode, params)                    
+#                    with Pool(num_threads) as p:
+#                    #   p.map(_cycle_loop, self.T)
+#                        #H_t, X_t = pool.starmap(_run_episode, [(row, 4, 8) for row in data])
+#                        H_t, X_t = pool.apply(_run_episode, args=(self.A, alg, self.h, X_i_t_j[:, :, j])
+#                        #H_t, X_t = [pool.apply(_run_episode, args=(self.A, alg, self.h, X_i_t_j[i, t]) for X_i_t in X_i_t_j[i, t]]
+#                    #p.close()                    
+#
         #Translate Rewards following Domain
         R = X * self.d.r_amp + self.d.r_min
 
