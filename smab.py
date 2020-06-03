@@ -741,7 +741,7 @@ def _run_episode(A_i, alg, h, X_i_t=None):
         # Save both
         H_t[t] = i
         X_t[t] = x
-    return H, X
+    return H_t, X_t
 
 class SMAB():
     """ Base survival MAB process. """
