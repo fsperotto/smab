@@ -724,8 +724,8 @@ class BanditGamblerUCBPolicy(BanditGamblerPolicy):
 #@ray.remote
 def _run_episode(A_i, alg, h, X_i_t=None):
     # Initialize
-    X_t = np.zeros(self.h, dtype=float)  #successes
-    H_t = np.full(self.h, -1, dtype=int) #history of actions
+    X_t = np.zeros(h, dtype=float)  #successes
+    H_t = np.full(h, -1, dtype=int) #history of actions
     alg.reset()
     # Loop on time
     for t in range(h): #in T:
