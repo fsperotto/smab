@@ -19,11 +19,16 @@ import multiprocessing as mp
 from multiprocessing import Pool
 from functools import partial
 from concurrent.futures import ThreadPoolExecutor
+#import psutil
+#import ray
 import datetime
 #%matplotlib inline
 #%matplotlib notebook
 #import pickle
 #from google.colab import files
+
+num_cpus = psutil.cpu_count(logical=False)
+ray.init(num_cpus=num_cpus)
 
 #type = TypeVar('T')
 
@@ -716,6 +721,7 @@ class BanditGamblerUCBPolicy(BanditGamblerPolicy):
 
 ################################################################################
 
+#@ray.remote
 def _run_episode(A_i, alg, h, X_i_t=None):
     # Initialize
     X_t = np.zeros(self.h, dtype=float)  #successes
