@@ -871,7 +871,7 @@ class SMAB():
             for j in tqdm(range(self.n)):
                 for g, alg in enumerate(self.G):
                     p = Pool(num_threads)
-                    H_t, X_t = pool.apply(_run_episode, args=(self.A, alg, self.h, X_i_t_j[:, :, j]))
+                    H_t, X_t = p.apply(_run_episode, args=(self.A, alg, self.h, X_i_t_j[:, :, j]))
                     p.close()                    
 
                     #using Pool
