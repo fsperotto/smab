@@ -739,8 +739,8 @@ def _run_episode(A_i, alg, h, X_i_t=None):
         # The reward is returned to the algorithm
         alg.observe(x)
         # Save both
-        H[g, t] = i
-        X[g, t] = x
+        H_t[t] = i
+        X_t[t] = x
     return H, X
 
 class SMAB():
