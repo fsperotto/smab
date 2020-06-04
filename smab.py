@@ -1061,7 +1061,7 @@ class SMAB():
         # i.e. the progressive cumulative rewards plus initial budget
         #masked_B = ma.masked_less_equal(B, 0.0)
         RB = ma.masked_less_equal(B, 0.0).filled(0.0)
-
+        
         #averaged progressive budget considering ruin (float 2d matrix [t x j]) #averaged over repetitions
         self.MRB = np.mean(RB, axis=0)
 
@@ -1070,6 +1070,22 @@ class SMAB():
 
         #averaged final budget (float 1d matrix [j]) #averaged over repetitions
         self.mrb = np.mean(rb, axis=0)
+
+        
+        #progressive budget excluding ruin episodes (float 3d matrix [t x j x i])
+        # i.e. the progressive cumulative rewards plus initial budget
+        SB = ma.masked_less_equal(B, 0.0)
+        
+        #averaged progressive budget on survival episodes only (float 2d matrix [t x j]) #averaged over repetitions
+        self.MSB = np.mean(RB, axis=0)
+
+        #final budget (float 2d matrix [j x i])
+        sb = SB[:,:,-1]
+
+        #averaged final budget (float 1d matrix [j]) #averaged over repetitions
+        self.msb = np.mean(sb, axis=0)
+
+
         
         ##time map of the averaged budget on negative (int 2d matrix [t x j])
         #self.TNMB = np.array([[1 if(v<0) else 0 for v in MB_j] for MB_j in self.MB])
@@ -1190,6 +1206,14 @@ class SMAB():
             Y = np.block([Z, self.MRB])
             if ylabel is None:
                 ylabel = 'mortal budget (averaged over repetitions, stay at zero if ruin)'
+            if title is None:
+                title="Budget"
+        elif Y=='survival_budget':
+            X = self.T01
+            Z = np.reshape(np.repeat(self.b_0, self.m), [self.m, 1])
+            Y = np.block([Z, self.MSB])
+            if ylabel is None:
+                ylabel = 'survival budget (averaged over repetitions, excluding from average when ruin)'
             if title is None:
                 title="Budget"
         elif Y=='survival':
