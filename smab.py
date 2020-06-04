@@ -646,7 +646,7 @@ class AlarmedEpsilonGreedyPolicy(EpsilonGreedyPolicy, Budgeted):
         Budgeted.__init__(self, k, d=d, b_0=b_0)
         self.omega = omega   #safety-critical warning threshold for budget level
         if label is None:
-            self.label = "Alarmed-$\epsilon$-greedy($\epsilon=" + round(self.eps,2) + "\omega=" + round(self.omega, 2) + "$)"
+            self.label = "Alarmed-$\epsilon$-greedy($\epsilon=" + str(round(self.eps,2)) + "\omega=" + str(round(self.omega, 2)) + "$)"
 
     def reset(self):
         EpsilonGreedyPolicy.reset(self)
