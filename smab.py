@@ -902,7 +902,7 @@ class SMAB():
             remote_X_i_t_j = ray.put(X_i_t_j)
             
             for j in tqdm(range(self.n)):
-                [_run_episode.remote(j, self.A_i, alg, g, h, remote_X, remote_H, remote_X_i_t_j) for g, alg in enumerate(self.G)]
+                [_run_episode.remote(j, self.A, alg, g, h, remote_X, remote_H, remote_X_i_t_j) for g, alg in enumerate(self.G)]
 
             X = ray.get(remote_X)
             H = ray.get(remote_H)
