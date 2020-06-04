@@ -1,3 +1,9 @@
+# -*- coding: utf-8 -*-
+"""Survival Multiarmed Bandits.
+
+This module implements SMAB arms and methods.
+"""
+
 #Dependencies
 #from typing import TypeVar, Generic
 import numpy as np
@@ -15,20 +21,17 @@ from collections import Iterable
 #from IPython.display import display
 import matplotlib.pyplot as plt
 #import matplotlib.mlab as mlab
-import multiprocessing as mp
-from multiprocessing import Pool
-from functools import partial
-from concurrent.futures import ThreadPoolExecutor
-#import psutil
-#import ray
+#import multiprocessing as mp
+#from multiprocessing import Pool
+#from functools import partial
+#from concurrent.futures import ThreadPoolExecutor
+import psutil
+import ray
 import datetime
 #%matplotlib inline
 #%matplotlib notebook
 #import pickle
 #from google.colab import files
-
-#num_cpus = psutil.cpu_count(logical=False)
-#ray.init(num_cpus=num_cpus)
 
 #type = TypeVar('T')
 
@@ -721,27 +724,54 @@ class BanditGamblerUCBPolicy(BanditGamblerPolicy):
 
 ################################################################################
 
-#@ray.remote
-def _run_episode(A_i, alg, h, X_i_t=None):
+@ray.remote  #for shared multiprocessing
+def _create_nparray(size, dtype='float', ini_value=None):
+    """This function creates a shared matrix for ray multiprocessing.
+
+    Args:
+        size: the matrix dimensions.
+        d_type: the data type of elements.
+        ini_value: the value of initialized elements. None for no initialization.
+
+    Returns:
+        ray id of shared matrix.
+
+    """
+    if ini_value is None:
+        return np.array(size, dtype=dtype)
+    elif ini_value == 0:
+        return np.zeros(size, dtype=dtype) 
+    else:
+        return np.full(size, ini_value, dtype=dtype)
+
+@ray.remote  #for shared multiprocessing
+def _run_episode(j, A_i, alg, g, h, X, H, X_j_t_i):
+    """This function runs one episode for a SMAB simulation.
+
+    Args:
+        j: the repetition index
+        A_i: list of arms.
+        alg: solving method object.
+        g: method index.
+        h: time-horizon.
+        X_j_g_t: the pointer to the shared array where observations are stored.
+        H_j_g_t: the pointer to the shared array where actions are stored.
+        X_j_t_i: the pointer to the shared array where the pre-draw of pull results are stored.
+    """
+
     # Initialize
-    X_t = np.zeros(h, dtype=float)  #successes
-    H_t = np.full(h, -1, dtype=int) #history of actions
     alg.reset()
     # Loop on time
     for t in range(h): #in T:
         # The algorithm chooses the arm to play
         i = alg.choose()
         # The arm played gives reward
-        if X_i_t is not None:
-            x = X_i_t[i, t]
-        else:
-            x = A_i[i].draw()
+        x = X_t_j_i[t, j, i]
         # The reward is returned to the algorithm
         alg.observe(x)
         # Save both
-        H_t[t] = i
-        X_t[t] = x
-    return H_t, X_t
+        H[j, g, t] = i
+        X[j, g, t] = x
 
 class SMAB():
     """ Base survival MAB process. """
@@ -810,24 +840,20 @@ class SMAB():
         #arms (1 ... i ... k)
         #repetitions (1 ... j ... n)
         #algorithms (1 ... g ... m)
+
+        num_cpus = psutil.cpu_count(logical=False)        
         
-        if num_threads is None:
-            num_threads = mp.cpu_count()
-            
-        # Initialize Rewards and History of selected Actions (3d matrices [t x g x i])
-        X = np.zeros((self.n, self.m, self.h), dtype=float)  #successes
-        #R = np.zeros((self.n, self.m, self.h), dtype=float)  #rewards
-        #SR = np.zeros((self.n, self.m, self.h), dtype=float)  #cumulated rewards
-        H = np.full((self.n, self.m, self.h), -1, dtype=int) #history of actions
-        #B = np.zeros((self.n, self.m, self.h), dtype=float)  #budget
-
-        # Draw for every arm all repetitions
-        if prev_draw:
-            X_i_t_j = np.array([arm.draw((self.h, self.n)) for arm in self.A])	
-
         #no parallelism
-        if (num_threads <= 1):
-            
+        if ((num_threads is not None) and (num_threads <= 1)) or (num_cpus == 1):
+        
+            # Initialize Rewards and History of selected Actions (3d matrices [t x g x i])
+            X = np.zeros((self.n, self.m, self.h), dtype=float)  #successes
+            H = np.full((self.n, self.m, self.h), -1, dtype=int) #history of actions
+
+            # Draw for every arm all repetitions
+            if prev_draw:
+                X_i_t_j = np.array([arm.draw((self.h, self.n)) for arm in self.A])	
+
             # For each repetition
             #for j in tqdm(range(self.n), desc=tqdm_desc_rep, leave=(tqdm_leave and self.m == 1), disable=(tqdm_disable or self.n == 1)):
             #for j in tqdm(range(self.n), desc=tqdm_desc_rep, leave=tqdm_leave, disable=(tqdm_disable or self.n == 1)):
@@ -839,7 +865,6 @@ class SMAB():
 
                     # Initialize
                     alg.reset()
-                    #s = 0.0
 
                     # Loop on time
                     #for t in tqdm(self.T, desc=tqdm_desc_it, leave=tqdm_leave, disable=(tqdm_disable or self.n > 1 or self.m > 1) ):
@@ -856,32 +881,32 @@ class SMAB():
                         # Save both
                         H[j, g, t] = i
                         X[j, g, t] = x
-                        #r = x * self.d.r_amp + self.d.r_min
-                        #s += r
-                        #R[j, g, t] = r
-                        #SR[j, g, t] = s
-                        #b = s + self.b_0
-                        #B[j, g, t] = b
-                        #if (b == 0):
-                        #    break
 
         #parallelism
         else: 
 
+            #initialize multiprocessing
+            if num_threads is None:
+                num_threads = num_cpus
+            if ray.is_initialized() == False:
+                ray.init(num_cpus=num_threads)
+            
+            # Initialize Rewards and History of selected Actions (3d matrices [t x g x i])
+            remote_X = _create_nparray.remote((self.n, self.m, self.h), dtype='float', ini_value=0.0) #successes
+            remote_H = _create_nparray.remote((self.n, self.m, self.h), dtype='int', ini_value=-1) #history of actions
+
+            # Draw for every arm all repetitions
+            #if prev_draw:
+            X_i_t_j = np.array([arm.draw((self.h, self.n)) for arm in self.A])
+            remote_X_i_t_j = ray.put(X_i_t_j)
+            
             for j in tqdm(range(self.n)):
                 for g, alg in enumerate(self.G):
-                    p = Pool(num_threads)
-                    H_t, X_t = p.apply(_run_episode, args=(self.A, alg, self.h, X_i_t_j[:, :, j]))
-                    p.close()                    
+                    _run_episode.remote(j, self.A_i, alg, g, h, remote_X, remote_H, remote_X_i_t_j)
 
-                    #using Pool
-                    # map function that expects a function of a single argument
-                    #f = partial(_run_episode, params)                    
-#                    with Pool(num_threads) as p:
-#                    #   p.map(_cycle_loop, self.T)
-#                        #H_t, X_t = pool.starmap(_run_episode, [(row, 4, 8) for row in data])
-#                        #H_t, X_t = [pool.apply(_run_episode, args=(self.A, alg, self.h, X_i_t_j[i, t]) for X_i_t in X_i_t_j[i, t]]
-
+            X = ray.get(remote_X)
+            H = ray.get(remote_H)
+           
         #Translate Rewards following Domain
         R = X * self.d.r_amp + self.d.r_min
 
