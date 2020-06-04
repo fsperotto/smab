@@ -1077,7 +1077,7 @@ class SMAB():
         SB = ma.masked_less_equal(B, 0.0)
         
         #averaged progressive budget on survival episodes only (float 2d matrix [t x j]) #averaged over repetitions
-        self.MSB = np.mean(RB, axis=0)
+        self.MSB = np.mean(SB, axis=0)
 
         #final budget (float 2d matrix [j x i])
         sb = SB[:,:,-1]
