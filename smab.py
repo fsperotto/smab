@@ -1181,7 +1181,15 @@ class SMAB():
             Z = np.reshape(np.repeat(self.b_0, self.m), [self.m, 1])
             Y = np.block([Z, self.MB])
             if ylabel is None:
-                ylabel = 'budget (averaged over repetitions)'
+                ylabel = 'immortal budget (averaged over repetitions, does not consider ruin)'
+            if title is None:
+                title="Budget"
+        elif Y=='mortal_budget':
+            X = self.T01
+            Z = np.reshape(np.repeat(self.b_0, self.m), [self.m, 1])
+            Y = np.block([Z, self.MRB])
+            if ylabel is None:
+                ylabel = 'mortal budget (averaged over repetitions, stay at zero if ruin)'
             if title is None:
                 title="Budget"
         elif Y=='survival':
