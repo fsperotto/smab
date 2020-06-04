@@ -841,7 +841,8 @@ class SMAB():
         #repetitions (1 ... j ... n)
         #algorithms (1 ... g ... m)
 
-        num_cpus = psutil.cpu_count(logical=False)        
+        #num_cpus = psutil.cpu_count(logical=False)        
+        num_cpus = psutil.cpu_count()        
         
         #no parallelism
         if ((num_threads is not None) and (num_threads <= 1)) or (num_cpus == 1):
