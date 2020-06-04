@@ -1305,7 +1305,7 @@ class SMAB():
 
         if filename is not None:
             plt.tight_layout()
-            plt.savefig(filename)
+            plt.savefig(filename, bbox_inches='tight')
 
         if show:
             plt.show()
