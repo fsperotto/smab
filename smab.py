@@ -1072,19 +1072,18 @@ class SMAB():
         self.mrb = np.mean(rb, axis=0)
 
         
-        #progressive budget excluding ruin episodes (float 3d matrix [t x j x i])
-        # i.e. the progressive cumulative rewards plus initial budget
-        SB = ma.masked_less_equal(B, 0.0)
-        
-        #averaged progressive budget on survival episodes only (float 2d matrix [t x j]) #averaged over repetitions
-        self.MSB = np.mean(SB, axis=0)
-
-        #final budget (float 2d matrix [j x i])
-        sb = SB[:,:,-1]
-
-        #averaged final budget (float 1d matrix [j]) #averaged over repetitions
-        self.msb = np.mean(sb, axis=0)
-
+        ##progressive budget excluding ruin episodes (float 3d matrix [t x j x i])
+        ## i.e. the progressive cumulative rewards plus initial budget
+        #SB = ma.masked_less_equal(B, 0.0)
+        #
+        ##averaged progressive budget on survival episodes only (float 2d matrix [t x j]) #averaged over repetitions
+        #self.MSB = np.mean(SB, axis=0)
+        #
+        ##final budget (float 2d matrix [j x i])
+        #sb = SB[:,:,-1]
+        #
+        ##averaged final budget (float 1d matrix [j]) #averaged over repetitions
+        #self.msb = np.mean(sb, axis=0)
 
         
         ##time map of the averaged budget on negative (int 2d matrix [t x j])
@@ -1177,11 +1176,11 @@ class SMAB():
 
         fig = plt.figure(figsize=(12,8))
         
-        if Y=='precision':
+        if (Y=='precision') or (Y=='immortal_precision'):
             X = self.T1
             Y = self.MF_a[:,self.a_star]
             if ylabel is None:
-                ylabel = 'precision (averaged over repetitions)'
+                ylabel = 'immortal precision (averaged over repetitions, does not stop on ruin)'
             if title is None:
                 title="Precision"
         elif Y=='sum_reward':
@@ -1189,33 +1188,41 @@ class SMAB():
             Z = np.reshape(np.zeros(self.m, dtype='float'), [self.m, 1])
             Y = np.block([Z, self.MSR])
             if ylabel is None:
-                ylabel = 'cumulated reward (averaged over repetitions)'
+                ylabel = 'cumulated reward (averaged over repetitions, not stop on ruin)'
             if title is None:
                 title="Cumulated Reward"
-        elif Y=='budget':
+        elif Y=='immortal_budget':
             X = self.T01
             Z = np.reshape(np.repeat(self.b_0, self.m), [self.m, 1])
             Y = np.block([Z, self.MB])
             if ylabel is None:
-                ylabel = 'immortal budget (averaged over repetitions, does not consider ruin)'
+                ylabel = 'immortal budget (averaged over repetitions, not stop on ruin)'
             if title is None:
-                title="Budget"
+                title="Immortal Budget"
         elif Y=='mortal_budget':
             X = self.T01
             Z = np.reshape(np.repeat(self.b_0, self.m), [self.m, 1])
             Y = np.block([Z, self.MRB])
             if ylabel is None:
-                ylabel = 'mortal budget (averaged over repetitions, stay at zero if ruin)'
+                ylabel = 'mortal budget (averaged over repetitions, zero if ruin)'
             if title is None:
-                title="Budget"
-        elif Y=='survival_budget':
+                title="Mortal Budget"
+        elif Y=='penalized_budget':
             X = self.T01
             Z = np.reshape(np.repeat(self.b_0, self.m), [self.m, 1])
-            Y = np.block([Z, self.MSB])
+            Y = np.block([Z, self.MRB * self.SC])
             if ylabel is None:
-                ylabel = 'survival budget (averaged over repetitions, excluding from average when ruin)'
+                ylabel = 'penalized budget (averaged over repetitions, times survival rate)'
             if title is None:
-                title="Budget"
+                title="Penalized Budget"
+        #elif Y=='survival_budget':
+        #    X = self.T01
+        #    Z = np.reshape(np.repeat(self.b_0, self.m), [self.m, 1])
+        #    Y = np.block([Z, self.MSB])
+        #    if ylabel is None:
+        #        ylabel = 'survival budget (averaged over repetitions, excluding from average when ruin)'
+        #    if title is None:
+        #        title="Budget"
         elif Y=='survival':
             X = self.T01
             Z = np.reshape(np.ones(self.m, dtype='float'), [self.m, 1])
