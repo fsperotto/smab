@@ -525,7 +525,7 @@ class BayesUCBPolicy(EmpiricalMeansPolicy):
 # class for the marab algorithm
 class MaRaBPolicy(EmpiricalMeansPolicy):
 
-    def __init__(self, k, v_ini=None, w=1, alpha=0.05, c=1e-6):
+    def __init__(self, k, v_ini=None, w=1, , label=None, alpha=0.05, c=1e-6):
         super().__init__(k, v_ini=v_ini, w=w, label=label)
         self.alpha = alpha
         self.c = c
@@ -722,6 +722,38 @@ class BanditGamblerUCBPolicy(BanditGamblerPolicy):
         factor = np.log(self.t)/self.t
         return beta.cdf(0.5, x_i+1, y_i+1) + integral(lambda p, x, y, b : ((1-p)/p)**b * beta.pdf(p, x*factor+1, y*factor+1), 0.5, 1.0, (x_i, y_i, b))[0]
 
+################################################################################
+		
+class PositiveGamblerUCB(EmpiricalMeansPolicy, Budgeted):
+
+    def __init__(self, k, v_ini=None, w=1, label=None, d=None, b_0=None):
+        #super().__init__(k, v_ini=v_ini, w=w, d=d, b_0=b_0)
+        EmpiricalMeansPolicy.__init__(self, k, v_ini=v_ini, w=w, label=label)
+        Budgeted.__init__(self, k, d=d, b_0=b_0)
+        if label is None:
+            self.label = "Positive-Gambler"
+
+    def reset(self):
+        #super().reset()
+        EmpiricalMeansPolicy.reset(self)
+        Budgeted.reset(self)
+
+    def _update(self, r):
+        #super()._update(r)
+        EmpiricalMeansPolicy._update(self, r)
+        Budgeted._update(self, r)
+
+    def _evaluate(self):
+        i = self.i_last
+        n_i = self.n_i[i]
+        mu_i = self.s_i[i] / n_i
+        t = self.t
+		b = max(1.0, self.b)
+        if self.n_i[i] == 0:
+            self.v_i[i] = float('+inf')
+        else:
+            self.v_i[i] = 1 - beta.cdf(0.5, x_i+1, y_i+1) + sqrt((2 * log(b)) / n_i)
+			
 ################################################################################
 
 @ray.remote  #for shared multiprocessing
