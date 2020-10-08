@@ -525,7 +525,7 @@ class BayesUCBPolicy(EmpiricalMeansPolicy):
 # class for the marab algorithm
 class MaRaBPolicy(EmpiricalMeansPolicy):
 
-    def __init__(self, k, v_ini=None, w=1, , label=None, alpha=0.05, c=1e-6):
+    def __init__(self, k, v_ini=None, w=1, label=None, alpha=0.05, c=1e-6):
         super().__init__(k, v_ini=v_ini, w=w, label=label)
         self.alpha = alpha
         self.c = c
