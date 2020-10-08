@@ -748,6 +748,8 @@ class PositiveGamblerUCB(EmpiricalMeansPolicy, Budgeted):
         n_i = self.n_i[i]
         mu_i = self.s_i[i] / n_i
         t = self.t
+        x_i = self.s_i[i]
+        y_i = n_i - self.s_i[i]
         b = max(1.0, self.b)
         if self.n_i[i] == 0:
             self.v_i[i] = float('+inf')
