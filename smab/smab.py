@@ -271,6 +271,22 @@ class EmpiricalMeansPolicy(BasePolicy):
         return np.flatnonzero(self.v_i == np.max(self.v_i))
     
 ################################################################################
+
+class EmpiricalSumPolicy(EmpiricalMeansPolicy):
+    r""" The empirical sum policy.
+    - At every time step, the arm with max total sum is chosen. It is a possible greedy policy for zero centered reward domains.
+    """
+
+    def _evaluate(self):
+        """ update utility after last observation 
+            in this case, the utility is the sum
+        """
+        i = self.i_last
+        s_i = self.s_i[i]
+        self.v_i[i] = s_i    # value corresponds to the current sum
+
+################################################################################
+
 class EpsilonGreedyPolicy(EmpiricalMeansPolicy):
     r""" The epsilon-greedy random policy.
     - At every time step, a fully uniform random exploration has probability :math:`\varepsilon(t)` to happen, otherwise an exploitation is done.
