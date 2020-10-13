@@ -1206,9 +1206,10 @@ class SMAB():
     """ 
     Plot a line graph
     """
-    def plot(self, Y, X=None, names=None, linestyles=None, linecolors=None, xlabel="$t$", ylabel=None, reorder='desc', showlast='legend', title=None, filename=None, figsize=(12,8), show=True):
+    def plot(self, Y, X=None, names=None, linestyles=None, linecolors=None, xlabel="$t$", ylabel=None, reorder='desc', showlast='legend', title=None, filename=None, figsize=None, show=True):
 
-        fig = plt.figure(figsize=(12,8))
+        if figsize in not None:
+            fig = plt.figure(figsize=figsize)
         
         if (Y=='precision') or (Y=='immortal_precision'):
             X = self.T1
