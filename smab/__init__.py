@@ -1,11 +1,11 @@
-from smab import Domain
-from smab import RandomArm, BernoulliArm 
-from smab import BasePolicy, RandomPolicy, FixedPolicy, EmpiricalMeansPolicy, EmpiricalSumPolicy, EpsilonGreedyPolicy, SoftMaxPolicy
-from smab import UCB1Policy, BernKLUCBPolicy, ThompsonPolicy, BayesUCBPolicy
-from smab import MaRaBPolicy
-from smab import Budgeted, AlarmedUCBPolicy, AlarmedBernKLUCBPolicy, AlarmedEpsilonGreedyPolicy
-from smab import BanditGamblerPolicy, BanditGamblerUCBPolicy, PositiveGamblerUCB
-from smab import SMAB
+from .smab import Domain
+from .smab import RandomArm, BernoulliArm 
+from .smab import BasePolicy, RandomPolicy, FixedPolicy, EmpiricalMeansPolicy, EmpiricalSumPolicy, EpsilonGreedyPolicy, SoftMaxPolicy
+from .smab import UCB1Policy, BernKLUCBPolicy, ThompsonPolicy, BayesUCBPolicy
+from .smab import MaRaBPolicy
+from .smab import Budgeted, AlarmedUCBPolicy, AlarmedBernKLUCBPolicy, AlarmedEpsilonGreedyPolicy
+from .smab import BanditGamblerPolicy, BanditGamblerUCBPolicy, PositiveGamblerUCB
+from .smab import SMAB
 
 __all__ =  ['Domain']
 __all__ += ['RandomArm', 'BernoulliArm']
