@@ -126,7 +126,7 @@ class BasePolicy():
         if label is not None:
             self.label = label
         else:
-            self.label = f"Base Policy"
+            self.label = "Base Policy"
 
     def reset(self):
         """ Start the game (fill pulls with 0)."""
@@ -166,7 +166,7 @@ class RandomPolicy(BasePolicy):
     def __init__(self, k, w=1, label=None):
         super().__init__(k, w=w, label=label)
         if label is None:
-            self.label = f"Random Policy"
+            self.label = "Random Policy"
 
     def choose(self):
         # base choice: verify mandatory initial rounds
@@ -205,7 +205,7 @@ class FixedPolicy(BasePolicy):
             self.i_last = self.fixed_i
         return self.i_last
         
-    
+
 ################################################################################
 
 class EmpiricalMeansPolicy(BasePolicy):
@@ -260,10 +260,7 @@ class EmpiricalMeansPolicy(BasePolicy):
         """ update utility after last observation 
             in this case, the utility is the estimated mean
         """
-        i = self.i_last
-        n_i = self.n_i[i]
-        s_i = self.s_i[i]
-        self.v_i[i] = s_i / n_i    # value corresponds to the empirical mean
+        self.v_i[self.i_last] = self.s_i[self.i_last] / self.n_i[self.i_last]    # value corresponds to the empirical mean
         #self.v_i[i] = (v * ((n-1) / n)) + (r / n)
 
     def _calc_bests(self):
@@ -275,15 +272,14 @@ class EmpiricalMeansPolicy(BasePolicy):
 class EmpiricalSumPolicy(EmpiricalMeansPolicy):
     r""" The empirical sum policy.
     - At every time step, the arm with max total sum is chosen. It is a possible greedy policy for zero centered reward domains.
+	- Because arms in this module have rawards in [0, 1], the sum is shifted to [-0.5, +0.5]
     """
 
     def _evaluate(self):
         """ update utility after last observation 
             in this case, the utility is the sum
         """
-        i = self.i_last
-        s_i = self.s_i[i]
-        self.v_i[i] = s_i    # value corresponds to the current sum
+        self.v_i[self.i_last] = self.s_i[self.i_last] - (self.n_i[self.i_last] / 2)   # value corresponds to the "centralized" current sum
 
 ################################################################################
 
