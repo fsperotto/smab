@@ -17,9 +17,9 @@ setup(
     url="https://github.com/fsperotto/smab",
     license = 'MIT',
     #packages=find_packages(),
-	#packages=['lts', 'lts.emb_seg_text'],
+	packages=['smab'],
     #packages=find_packages(exclude=['data', 'notebooks']), 
-    packages=find_namespace_packages(include=['smab'],exclude=['extra', 'old', 'notebooks']),
+    #packages=find_namespace_packages(include=['smab'],exclude=['extra', 'old', 'notebooks']),
     #include_package_data = True,
     #package_data={'corpus': ['corpus']},
     classifiers=[
