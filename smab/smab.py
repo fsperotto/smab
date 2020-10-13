@@ -1224,7 +1224,7 @@ class SMAB():
     """
     def plot(self, Y, X=None, names=None, linestyles=None, linecolors=None, xlabel="$t$", ylabel=None, reorder='desc', showlast='legend', title=None, filename=None, figsize=None, show=True):
 
-        if figsize in not None:
+        if figsize is not None:
             fig = plt.figure(figsize=figsize)
         
         if (Y=='precision') or (Y=='immortal_precision'):
