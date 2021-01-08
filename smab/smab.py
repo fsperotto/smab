@@ -1095,29 +1095,38 @@ class SMAB():
         #time dead map (int 3d matrix [t x j x i])
         TD = np.maximum.accumulate(TNB, axis=2)
 
-        #progressive survival counter of episodes (float 3d matrix [t x j])
-        self.SC = 1 - np.mean(TD, axis=0)
-        #final survival counter
-        self.sc = self.SC[:,-1]
-        #final survival rate
-        self.rsc = self.sc / self.n
+	
+        #time alive map (int 3d matrix [t x j x i])
+        TS = 1 - TD
 
-        
+        #progressive death counter of episodes (float 3d matrix [t x j])
+        DC = np.sum(TD, axis=0)
+
+        #final death counter
+        dc = _DC[:,-1]
+
+        #progressive survival rate of episodes (float 3d matrix [t x j])
+        #MS = 1 - np.mean(TD, axis=0)
+        self.MS = np.mean(TS, axis=0)
+
+        #final survival counter
+        self.ms = MS[:,-1]
+
         #progressive budget considering ruin (float 3d matrix [t x j x i])
         # i.e. the progressive cumulative rewards plus initial budget
-        #masked_B = ma.masked_less_equal(B, 0.0)
-        RB = ma.masked_less_equal(B, 0.0).filled(0.0)
-        
-        #averaged progressive budget considering ruin (float 2d matrix [t x j]) #averaged over repetitions
-        self.MRB = np.mean(RB, axis=0)
+        #_RB = ma.masked_less_equal(_B, 0.0).filled(0.0)
+        #_RB = np.maximum(B, 0.0)
+        RB = np.multiply(B, TS)
 
-        #final budget (float 2d matrix [j x i])
-        rb = RB[:,:,-1]
+	self.MRB = np.mean(self.RB, axis=0)
 
-        #averaged final budget (float 1d matrix [j]) #averaged over repetitions
-        self.mrb = np.mean(rb, axis=0)
-
-        
+	
+        #progressive penalized mean budget (float 3d matrix [t x j x i])
+        # i.e. the progressive mean budget multiplied by survival rate
+        self.MPB = np.multiply(self.MB, self.MS)
+	
+	
+	
         ##progressive budget excluding ruin episodes (float 3d matrix [t x j x i])
         ## i.e. the progressive cumulative rewards plus initial budget
         #SB = ma.masked_less_equal(B, 0.0)
@@ -1209,10 +1218,6 @@ class SMAB():
             self.B = B
             self.b = b
             self.TNB = TNB
-            self.STNB = STNB
-            self.NB = NB
-            self.SNB = SNB
-            self.snb = snb
 
             
     """ 
@@ -1257,7 +1262,7 @@ class SMAB():
         elif Y=='penalized_budget':
             X = self.T01
             Z = np.reshape(np.repeat(self.b_0, self.m), [self.m, 1])
-            Y = np.block([Z, self.MRB * self.SC])
+            Y = np.block([Z, self.MPB])
             if ylabel is None:
                 ylabel = 'penalized budget (averaged over repetitions, times survival rate)'
             if title is None:
