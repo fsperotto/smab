@@ -390,14 +390,15 @@ class UCB1Policy(EmpiricalMeansPolicy):
         .. math:: I_k(t) = \frac{X_k(t)}{N_k(t)} + \sqrt{\frac{2 \log(t)}{N_k(t)}}.
         """
         #calculate utility following UCB formula
-        i = self.i_last
-        n_i = self.n_i[i]
-        mu_i = self.s_i[i] / n_i
         t = self.t
-        if self.n_i[i] == 0:
-            self.v_i[i] = float('+inf')
-        else:
-            self.v_i[i] = mu_i + sqrt((2 * log(t)) / n_i)
+        #i = self.i_last
+        for i in range(self.k): 
+            n_i = self.n_i[i]
+            mu_i = self.s_i[i] / n_i
+            if self.n_i[i] == 0:
+                self.v_i[i] = float('+inf')
+            else:
+                self.v_i[i] = mu_i + sqrt((2 * log(t)) / n_i)
 
 
 ################################################################################
@@ -473,14 +474,15 @@ class BernKLUCBPolicy(EmpiricalMeansPolicy):
         """
         c = 1.0
         #tolerance = 1e-4
-        i = self.i_last
-        n_i = self.n_i[i]
-        mu_i = self.s_i[i] / n_i
         t = self.t
-        if n_i == 0:
-            self.v_i[i] = float('+inf')
-        else:
-            self.v_i[i] = self._klucbBern(mu_i, c * log(t) / n_i)
+        #i = self.i_last
+        for i in range(self.k): 
+            n_i = self.n_i[i]
+            mu_i = self.s_i[i] / n_i
+            if n_i == 0:
+                self.v_i[i] = float('+inf')
+            else:
+                self.v_i[i] = self._klucbBern(mu_i, c * log(t) / n_i)
 
 ################################################################################
 
@@ -525,12 +527,14 @@ class BayesUCBPolicy(EmpiricalMeansPolicy):
         r""" Compute the current index, at time t and after :math:`N_k(t)` pulls of arm k, giving :math:`S_k(t)` rewards of 1, by taking the :math:`1 - \frac{1}{t}` quantile from the Beta posterior:
         .. math:: I_k(t) = \mathrm{Quantile}\left(\mathrm{Beta}(1 + S_k(t), 1 + N_k(t) - S_k(t)), 1 - \frac{1}{t}\right).
         """
-        i = self.i_last
-        #q = 1. - (1. / (1 + self.n_i[i]))
-        q = 1. - (1. / (1 + self.t))
-        a = self.s_i[i] + 1
-        b = self.n_i[i] - self.s_i[i] + 1
-        self.v_i[i] = beta.ppf(q, a, b)
+        t = self.t
+        #i = self.i_last
+        for i in range(self.k): 
+            #q = 1. - (1. / (1 + self.n_i[i]))
+            q = 1. - (1. / (1 + t))
+            a = self.s_i[i] + 1
+            b = self.n_i[i] - self.s_i[i] + 1
+            self.v_i[i] = beta.ppf(q, a, b)
 
 ################################################################################
 
@@ -554,14 +558,16 @@ class MaRaBPolicy(EmpiricalMeansPolicy):
         self.reward_samples[self.i_last] = np.sort(np.append(self.reward_samples[self.i_last], [r]))
         
     def _evaluate(self):
-        i = self.i_last
-        # calculating empirical cvar
-        e = np.ceil(self.alpha*self.n_i[i]).astype(int)
-        empirical_cvar = self.reward_samples[i][:e].mean()
-        # calculating lower confidence bound
-        lcb = np.sqrt(np.log(np.ceil(self.alpha*self.t))/self.n_i[i])
-        # adding score to scores list
-        self.v_i[i] = empirical_cvar - self.c * lcb
+        t = self.t
+        #i = self.i_last
+        for i in range(self.k): 
+            # calculating empirical cvar
+            e = np.ceil(self.alpha*self.n_i[i]).astype(int)
+            empirical_cvar = self.reward_samples[i][:e].mean()
+            # calculating lower confidence bound
+            lcb = np.sqrt(np.log(np.ceil(self.alpha*t))/self.n_i[i])
+            # adding score to scores list
+            self.v_i[i] = empirical_cvar - self.c * lcb
 
 ################################################################################
 
