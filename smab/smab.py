@@ -1124,7 +1124,7 @@ class SMAB():
         #_RB = np.maximum(B, 0.0)
         RB = np.multiply(B, TS)
 
-	self.MRB = np.mean(self.RB, axis=0)
+        self.MRB = np.mean(self.RB, axis=0)
 
 	
         #progressive penalized mean budget (float 3d matrix [t x j x i])
