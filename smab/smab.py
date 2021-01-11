@@ -272,7 +272,7 @@ class EmpiricalMeansPolicy(BasePolicy):
 class EmpiricalSumPolicy(EmpiricalMeansPolicy):
     r""" The empirical sum policy.
     - At every time step, the arm with max total sum is chosen. It is a possible greedy policy for zero centered reward domains.
-	- Because arms in this module have rawards in [0, 1], the sum is shifted to [-0.5, +0.5]
+    - Because arms in this module have rawards in [0, 1], the sum is shifted to [-0.5, +0.5]
     """
 
     def _evaluate(self):
@@ -741,7 +741,7 @@ class BanditGamblerUCBPolicy(BanditGamblerPolicy):
         return beta.cdf(0.5, x_i+1, y_i+1) + integral(lambda p, x, y, b : ((1-p)/p)**b * beta.pdf(p, x*factor+1, y*factor+1), 0.5, 1.0, (x_i, y_i, b))[0]
 
 ################################################################################
-		
+
 class PositiveGamblerUCB(EmpiricalMeansPolicy, Budgeted):
 
     def __init__(self, k, v_ini=None, w=1, label=None, d=None, b_0=None):
@@ -773,7 +773,7 @@ class PositiveGamblerUCB(EmpiricalMeansPolicy, Budgeted):
             self.v_i[i] = float('+inf')
         else:
             self.v_i[i] = 1 - beta.cdf(0.5, x_i+1, y_i+1) + sqrt((2 * log(b)) / n_i)
-			
+
 ################################################################################
 
 @ray.remote  #for shared multiprocessing
@@ -879,7 +879,7 @@ class SMAB():
             self.w = w
 
         #if save all sim data
-        self.save_only_means = save_only_means		
+        self.save_only_means = save_only_means
 
         #run
         if run:
@@ -904,7 +904,7 @@ class SMAB():
 
             # Draw for every arm all repetitions
             if prev_draw:
-                X_i_t_j = np.array([arm.draw((self.h, self.n)) for arm in self.A])	
+                X_i_t_j = np.array([arm.draw((self.h, self.n)) for arm in self.A])
 
             # For each repetition
             #for j in tqdm(range(self.n), desc=tqdm_desc_rep, leave=(tqdm_leave and self.m == 1), disable=(tqdm_disable or self.n == 1)):
@@ -971,7 +971,7 @@ class SMAB():
         N_a = np.cumsum(H_a, axis=3)
 
         #averaged progressive actions count (float 3d matrix [t x j x a]) #averaged over repetitions
-        self.average_pulls_count_ajt = self.MN_a = np.mean(N_a, axis=0)		
+        self.average_pulls_count_ajt = self.MN_a = np.mean(N_a, axis=0)
 
         #progressive actions frequency (float 4d matrix [t x j x i x a])
         F_a = N_a / self.T1
@@ -985,13 +985,13 @@ class SMAB():
             NW_a = np.concatenate((N_a[:,:,:,:self.w], N_a[:,:,:,self.w:] - N_a[:,:,:,:-self.w]), axis=3)
 
             #averaged window count (float 3d matrix [t x j x a]) #averaged over repetitions
-            self.window_average_pulls_count_ajt = self.MNW_a = np.mean(NW_a, axis=0)		
+            self.window_average_pulls_count_ajt = self.MNW_a = np.mean(NW_a, axis=0)
 
             #window frequency (float 4d matrix [t x j x i x a])
             FW_a = np.concatenate((N_a[:,:,:,:self.w] / np.arange(1,self.w+1, dtype='float'), (N_a[:,:,:,self.w:] - N_a[:,:,:,:-self.w]) / float(self.w)), axis=3) 
 
             #averaged window frequency (float 3d matrix [t x j x a]) #averaged over repetitions
-            self.window_average_pulls_freq_ajt = self.MFW_a = np.mean(FW_a, axis=0)		
+            self.window_average_pulls_freq_ajt = self.MFW_a = np.mean(FW_a, axis=0)
 
         #final arm pull count (int 3d matrix [j x i x a])
         #n_a = N_a[:,:,:,self.h-1]
@@ -1101,7 +1101,7 @@ class SMAB():
         #time dead map (int 3d matrix [t x j x i])
         TD = np.maximum.accumulate(TNB, axis=2)
 
-	
+
         #time alive map (int 3d matrix [t x j x i])
         TS = 1 - TD
 
@@ -1126,13 +1126,11 @@ class SMAB():
 
         self.MRB = np.mean(self.RB, axis=0)
 
-	
         #progressive penalized mean budget (float 3d matrix [t x j x i])
         # i.e. the progressive mean budget multiplied by survival rate
         self.MPB = np.multiply(self.MB, self.MS)
-	
-	
-	
+
+
         ##progressive budget excluding ruin episodes (float 3d matrix [t x j x i])
         ## i.e. the progressive cumulative rewards plus initial budget
         #SB = ma.masked_less_equal(B, 0.0)
@@ -1151,9 +1149,9 @@ class SMAB():
         #self.TNMB = np.array([[1 if(v<0) else 0 for v in MB_j] for MB_j in self.MB])
 
         ##survival time (before ruin or end) (int 2d matrix [j x i])
-        #Z = np.reshape(np.ones(self.n*self.m, dtype='int'), [self.n, self.m, 1]) #add 1 at the end		
+        #Z = np.reshape(np.ones(self.n*self.m, dtype='int'), [self.n, self.m, 1]) #add 1 at the end
         #TNBZ = np.block([TNB, Z])
-        #self.TTNB = np.array([[np.nonzero(v_tj==1)[0][0] for v_tj in v_t] for v_t in TNBZ])		
+        #self.TTNB = np.array([[np.nonzero(v_tj==1)[0][0] for v_tj in v_t] for v_t in TNBZ])
 
         ##averaged survival time (before ruin or end) (int 1d matrix [j])
         #self.MTTNB = np.mean(self.TTNB, axis=0)
