@@ -394,7 +394,7 @@ class UCB1Policy(EmpiricalMeansPolicy):
         #i = self.i_last
         for i in range(self.k): 
             n_i = self.n_i[i]
-            mu_i = self.s_i[i] / n_i
+            mu_i = self.mu_i[i]
             if self.n_i[i] == 0:
                 self.v_i[i] = float('+inf')
             else:
@@ -478,7 +478,7 @@ class BernKLUCBPolicy(EmpiricalMeansPolicy):
         #i = self.i_last
         for i in range(self.k): 
             n_i = self.n_i[i]
-            mu_i = self.s_i[i] / n_i
+            mu_i = self.mu_i[i]
             if n_i == 0:
                 self.v_i[i] = float('+inf')
             else:
@@ -505,9 +505,9 @@ class ThompsonPolicy(EmpiricalMeansPolicy):
             I_k(t) &\sim \mathrm{Beta}(1 + \tilde{S_k}(t), 1 + \tilde{N_k}(t) - \tilde{S_k}(t)).
         """
         for i in range(self.k):
-          a = self.s_i[i] + 1
-          b = self.n_i[i] - self.s_i[i] + 1
-          self.v_i[i] = beta.rvs(a, b)
+          alp = self.s_i[i] + 1
+          bet = self.n_i[i] - self.s_i[i] + 1
+          self.v_i[i] = beta.rvs(alp, bet)
 
 
 ################################################################################
@@ -528,13 +528,13 @@ class BayesUCBPolicy(EmpiricalMeansPolicy):
         .. math:: I_k(t) = \mathrm{Quantile}\left(\mathrm{Beta}(1 + S_k(t), 1 + N_k(t) - S_k(t)), 1 - \frac{1}{t}\right).
         """
         t = self.t
+        q = 1. - (1. / (1 + t))
         #i = self.i_last
         for i in range(self.k): 
             #q = 1. - (1. / (1 + self.n_i[i]))
-            q = 1. - (1. / (1 + t))
-            a = self.s_i[i] + 1
-            b = self.n_i[i] - self.s_i[i] + 1
-            self.v_i[i] = beta.ppf(q, a, b)
+            alp = self.s_i[i] + 1
+            bet = self.n_i[i] - self.s_i[i] + 1
+            self.v_i[i] = beta.ppf(q, alp, bet)
 
 ################################################################################
 
@@ -732,12 +732,16 @@ class BanditGamblerUCBPolicy(BanditGamblerPolicy):
         if label is None:
             self.label = "Bandit-Gambler-UCB"
 
+    def _evaluate(self):
+        for i in range(self.k):
+            self.v_i[i] = 1.0 - self.ruin_estimated_prob(i)
+            
     def ruin_estimated_prob(self, i):
+        b = max(1.0, self.b)
+        factor = np.log(self.t)/self.t
         n_i = self.n_i[i]
         x_i = self.s_i[i]
         y_i = n_i - self.s_i[i]
-        b = max(1.0, self.b)
-        factor = np.log(self.t)/self.t
         return beta.cdf(0.5, x_i+1, y_i+1) + integral(lambda p, x, y, b : ((1-p)/p)**b * beta.pdf(p, x*factor+1, y*factor+1), 0.5, 1.0, (x_i, y_i, b))[0]
 
 ################################################################################
@@ -762,17 +766,17 @@ class PositiveGamblerUCB(EmpiricalMeansPolicy, Budgeted):
         Budgeted._update(self, r)
 
     def _evaluate(self):
-        i = self.i_last
-        n_i = self.n_i[i]
-        mu_i = self.s_i[i] / n_i
         t = self.t
-        x_i = self.s_i[i]
-        y_i = n_i - self.s_i[i]
         b = max(1.0, self.b)
-        if self.n_i[i] == 0:
-            self.v_i[i] = float('+inf')
-        else:
-            self.v_i[i] = 1 - beta.cdf(0.5, x_i+1, y_i+1) + sqrt((2 * log(b)) / n_i)
+        for i in range(self.k):
+            n_i = self.n_i[i]
+            mu_i = self.mu_i[i]
+            x_i = self.s_i[i]
+            y_i = n_i - self.s_i[i]
+            if self.n_i[i] == 0:
+                self.v_i[i] = float('+inf')
+            else:
+                self.v_i[i] = 1 - beta.cdf(0.5, x_i+1, y_i+1) + sqrt((2 * log(b)) / n_i)
 
 ################################################################################
 
