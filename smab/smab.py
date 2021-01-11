@@ -1113,7 +1113,7 @@ class SMAB():
         DC = np.sum(TD, axis=0)
 
         #final death counter
-        dc = _DC[:,-1]
+        dc = DC[:,-1]
 
         #progressive survival rate of episodes (float 3d matrix [t x j])
         #MS = 1 - np.mean(TD, axis=0)
