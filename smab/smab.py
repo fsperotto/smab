@@ -221,6 +221,7 @@ class EmpiricalMeansPolicy(BasePolicy):
         self.s_i = np.full(k, 0.0)  #: cumulated rewards for each arm
         self.v_ini = v_ini  if  (v_ini is not None)  else  0.0   #: initial value (index or utility) for the arms
         self.v_i = np.full(k, v_ini)  #: value (index or utility) for each arm
+        self.mu_i = np.full(k, None)  #: mean for each arm
         self.bests = np.arange(k)   #list of best arms (with equivalent highest utility), candidates
         if label is None:
             self.label = "Empirical Means"
@@ -230,6 +231,7 @@ class EmpiricalMeansPolicy(BasePolicy):
         super().reset()
         self.s_i.fill(0.0)
         self.v_i.fill(self.v_ini)
+        self.mu_i.fill(None)
         self.bests = np.arange(self.k)
 
     def choose(self):
@@ -255,12 +257,13 @@ class EmpiricalMeansPolicy(BasePolicy):
         """ update estimated means after last observation """
         super()._update(r)
         self.s_i[self.i_last] += r
+        self.mu_i[self.i_last] = self.s_i[self.i_last] / self.n_i[self.i_last]
 
     def _evaluate(self):
         """ update utility after last observation 
             in this case, the utility is the estimated mean
         """
-        self.v_i[self.i_last] = self.s_i[self.i_last] / self.n_i[self.i_last]    # value corresponds to the empirical mean
+        self.v_i[self.i_last] = self.mu_i[self.i_last]   # value corresponds to the empirical mean
         #self.v_i[i] = (v * ((n-1) / n)) + (r / n)
 
     def _calc_bests(self):
@@ -279,7 +282,7 @@ class EmpiricalSumPolicy(EmpiricalMeansPolicy):
         """ update utility after last observation 
             in this case, the utility is the sum
         """
-        self.v_i[self.i_last] = self.s_i[self.i_last] - (self.n_i[self.i_last] / 2)   # value corresponds to the "centralized" current sum
+        self.v_i[self.i_last] = self.s_i[self.i_last] - (self.n_i[self.i_last] / 2)   # value corresponds to the "centralized" current sum : [0, 1] shifted to [-0.5, +0.5]
 
 ################################################################################
 
